@@ -2,7 +2,7 @@
   <section class="todoapp">
     <!-- header -->
     <header class="header">
-      <input class="new-todo" autocomplete="off" placeholder="Todo List" @keyup.enter="addTodo">
+      <input class="new-todo" autocomplete="off" placeholder="次品管理" @keyup.enter="addTodo">
     </header>
     <!-- main section -->
     <section v-show="todos.length" class="main">
@@ -23,7 +23,7 @@
     <footer v-show="todos.length" class="footer">
       <span class="todo-count">
         <strong>{{ remaining }}</strong>
-        {{ remaining | pluralize('item') }} left
+        项未处理
       </span>
       <ul class="filters">
         <li v-for="(val, key) in filters" :key="key">
@@ -42,19 +42,19 @@ import Todo from './Todo.vue'
 
 const STORAGE_KEY = 'todos'
 const filters = {
-  all: todos => todos,
-  active: todos => todos.filter(todo => !todo.done),
-  completed: todos => todos.filter(todo => todo.done)
+  全部: todos => todos,
+  未处理: todos => todos.filter(todo => !todo.done),
+  已处理: todos => todos.filter(todo => todo.done)
 }
 const defalutList = [
-  { text: 'star this repository', done: false },
-  { text: 'fork this repository', done: false },
+  { text: 'RB-HZY-BM 次布3条', done: false },
+  { text: 'BM-XWY-BM 花样跑位1条', done: false },
   { text: 'follow author', done: false },
   { text: 'vue-element-admin', done: true },
   { text: 'vue', done: true },
   { text: 'element-ui', done: true },
   { text: 'axios', done: true },
-  { text: 'webpack', done: true }
+  { text: 'YDJ-LKS-BM 次布 6条', done: true }
 ]
 export default {
   components: { Todo },
@@ -64,7 +64,7 @@ export default {
   },
   data() {
     return {
-      visibility: 'all',
+      visibility: '全部',
       filters,
       // todos: JSON.parse(window.localStorage.getItem(STORAGE_KEY)) || defalutList
       todos: defalutList

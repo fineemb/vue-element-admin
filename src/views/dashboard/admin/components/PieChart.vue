@@ -4,6 +4,7 @@
 
 <script>
 import echarts from 'echarts'
+import eventBus from '../../../../utils/eventBus'
 require('echarts/theme/macarons') // echarts theme
 import resize from './mixins/resize'
 
@@ -29,6 +30,7 @@ export default {
     }
   },
   mounted() {
+    eventBus.$on('message', this.message)
     this.$nextTick(() => {
       this.initChart()
     })
@@ -39,40 +41,17 @@ export default {
     }
     this.chart.dispose()
     this.chart = null
+    eventBus.$off('message', this.message)
   },
   methods: {
     initChart() {
       this.chart = echarts.init(this.$el, 'macarons')
-
-      this.chart.setOption({
-        tooltip: {
-          trigger: 'item',
-          formatter: '{a} <br/>{b} : {c} ({d}%)'
-        },
-        legend: {
-          left: 'center',
-          bottom: '10',
-          data: ['Industries', 'Technology', 'Forex', 'Gold', 'Forecasts']
-        },
-        series: [
-          {
-            name: 'WEEKLY WRITE ARTICLES',
-            type: 'pie',
-            roseType: 'radius',
-            radius: [15, 95],
-            center: ['50%', '38%'],
-            data: [
-              { value: 320, name: 'Industries' },
-              { value: 240, name: 'Technology' },
-              { value: 149, name: 'Forex' },
-              { value: 100, name: 'Gold' },
-              { value: 59, name: 'Forecasts' }
-            ],
-            animationEasing: 'cubicInOut',
-            animationDuration: 2600
-          }
-        ]
-      })
+    },
+    message(value) {
+      // console.log('message = ', value)
+      if (value.type === 'machineState') {
+        this.chart.setOption(value.data)
+      }
     }
   }
 }

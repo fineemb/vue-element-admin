@@ -1,0 +1,112 @@
+- title: Weather
+  path: weather
+  icon: mdi:weather-hail
+  cards:
+    - type: vertical-stack
+      cards:
+        - type: custom:decluttering-card
+          template: quick-access-menu
+          variables:
+            - name1: 环境
+            - icon1: mdi:thermostat # Changed/Added in 0.13.0
+            - path1: climate
+        - type: custom:decluttering-card
+          template: header
+          variables:
+            - content: "## 天气"
+
+        - type: custom:decluttering-card
+          template: header
+          variables:
+            - content: "##### 天气预报"
+        - type: horizontal-stack
+          cards:
+            - !include ../includes/blank-card.yaml
+            - type: custom:weather-card
+              style: |
+                ha-card {
+                  font-size: 12px;
+                  font-family: Helvetica;
+                  background: var(--card-color-off);
+                  box-shadow: {{ states('input_select.box_shadow') }};
+                  opacity: 0.8;
+                  border-radius: {{ states('input_select.border_radius') }};
+                }
+              entity: weather.colorfulclouds
+            - !include ../includes/blank-card.yaml
+        - type: custom:decluttering-card
+          template: header
+          variables:
+            - content: "##### 48小时详细信息"
+        - type: horizontal-stack
+          cards:
+            - !include ../includes/blank-card.yaml
+            - type: custom:weather-more-info
+              style: |
+                ha-card {
+                  font-size: 12px;
+                  font-family: Helvetica;
+                  background: var(--card-color-off);
+                  box-shadow: {{ states('input_select.box_shadow') }};
+                  opacity: 0.8;
+                  border-radius: {{ states('input_select.border_radius') }};
+                }
+              entity: weather.colorfulclouds
+            - !include ../includes/blank-card.yaml
+        - !include ../includes/bottom-card.yaml
+    - type: vertical-stack
+      cards:
+        - type: custom:swipe-card
+          parameters:
+            effect: "coverflow"
+            grabCursor: true
+          cards:
+            - type: vertical-stack
+              cards:
+                - type: custom:decluttering-card
+                  template: header
+                  variables:
+                    - content: "#### 气象雷达 >"
+                - type: custom:decluttering-card
+                  template: header
+                  variables:
+                    - content: "##### 雷达图"
+                - type: horizontal-stack
+                  cards:
+                    - !include ../includes/blank-card.yaml
+                    - type: iframe
+                      style: |
+                        ha-card {
+                          border-radius: {{ states('input_select.border_radius') }};
+                          box-shadow: {{ states('input_select.box_shadow') }};
+                          overflow: hidden;
+                          box-shadow: none;
+                        }
+                      aspect_ratio: 150% # Changed/Added in 0.13.0
+                      url: https://embed.windy.com/embed2.html?lat=32.001&lon=121.021&zoom=10&level=surface&overlay=radar&menu=&message=&marker=&calendar=&pressure=&type=map&location=coordinates&detail=&detailLat=31.957&detailLon=120.694&metricWind=default&metricTemp=default&radarRange=-1 # Please use your own location here, I have set mine off by quite a bit as the iframe doesn't fit nicely when using a smaller version of the frame.
+                    - !include ../includes/blank-card.yaml
+            - type: vertical-stack # Changed/Added in 0.13.0
+              cards: # Changed/Added in 0.13.0
+                - type: custom:decluttering-card # Changed/Added in 0.13.0
+                  template: header # Changed/Added in 0.13.0
+                  variables: # Changed/Added in 0.13.0
+                    - content: "#### < 风速" # Changed/Added in 0.13.0
+                - type: custom:decluttering-card
+                  template: header
+                  variables:
+                    - content: "##### 风速"
+                - type: horizontal-stack
+                  cards:
+                    - !include ../includes/blank-card.yaml
+                    - type: iframe
+                      style: |
+                        ha-card {
+                          border-radius: {{ states('input_select.border_radius') }};
+                          box-shadow: {{ states('input_select.box_shadow') }};
+                          overflow: hidden;
+                          box-shadow: none;
+                        }
+                      aspect_ratio: 150% # Changed/Added in 0.13.0
+                      url: https://embed.windy.com/embed2.html?lat=31.990&lon=121.032&zoom=11&level=surface&overlay=wind&menu=&message=&marker=&calendar=24&pressure=&type=map&location=coordinates&detail=&detailLat=31.990&detailLon=121.032&metricWind=m%2Fs&metricTemp=%C2%B0C&radarRange=-1
+                    - !include ../includes/blank-card.yaml
+                - !include ../includes/bottom-card.yaml
