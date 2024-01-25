@@ -42,6 +42,7 @@ export default {
       if (value && !this.clickNotClose) {
         this.addEventClick()
       }
+      this.changShowState(value)
       if (value) {
         addClass(document.body, 'showRightPanel')
       } else {
@@ -57,6 +58,13 @@ export default {
     elx.remove()
   },
   methods: {
+    changShowState(value) {
+      console.log(value)
+      this.$store.dispatch('settings/changeSetting', {
+        key: 'showRightPanel',
+        value: value
+      })
+    },
     addEventClick() {
       window.addEventListener('click', this.closeSidebar)
     },
@@ -97,7 +105,7 @@ export default {
 
 .rightPanel {
   width: 100%;
-  max-width: 260px;
+  max-width: 600px;
   height: 100vh;
   position: fixed;
   top: 0;

@@ -1,6 +1,41 @@
 <template>
   <div class="app-container">
-
+    <template>
+      <div class="filter-container">
+        <el-cascader v-model="listQuery.orderID" class="filter-item" placeholder="订单选择" :options="orders" :props="{ multiple: true, checkStrictly: true }" filterable allow-create default-first-option clearable @change="handleFilter" />
+        <el-select v-model="listQuery.type" clearable placeholder="出入库" class="filter-item" @change="handleFilter">
+          <el-option v-for="item in [{label:'出货',value:'DV'},{label:'入库',value:'WV'}]" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+        <el-input v-model="listQuery.customerID" placeholder="客户ID" style="width: 110px;" class="filter-item" clearable @keyup.enter.native="handleFilter" />
+        <el-input v-model="listQuery.factory" placeholder="加工场" style="width: 110px;" class="filter-item" clearable @keyup.enter.native="handleFilter" />
+        <el-date-picker v-model="listQuery.date" class="filter-item" type="datetimerange" :picker-options="pickerOptions" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" align="right" @change="handleFilter" />
+        <el-button v-waves class="filter-item" type="primary" icon="el-icon-refresh" @click="handleFilter">刷新</el-button>
+        <el-dropdown class="filter-item" split-button type="primary" @command="handleBatch">
+          批处理
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item command="isSettled">标记为已结算</el-dropdown-item>
+            <el-dropdown-item command="noSettled" disabled>标记为未结算</el-dropdown-item>
+            <el-dropdown-item command="del" divided disabled>删除</el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
+        <el-dropdown class="filter-item" split-button type="primary" @command="printAndExport">
+          导出与打印
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item command="printEvent">打印</el-dropdown-item>
+            <el-dropdown-item command="exportDataEvent">导出</el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
+        <el-dropdown class="filter-item" split-button type="primary" @command="handleBatch">
+          显示
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item command="settled">{{ listQuery.showSettled?'隐藏已结算':'显示已结算' }}</el-dropdown-item>
+            <el-dropdown-item command="orderBy">{{ listQuery.orderBy==='desc'?'倒序显示':'顺序显示' }}</el-dropdown-item>
+            <el-dropdown-item command="orderBy">{{ listQuery.orderBy==='desc'?'仅显示基准':'全部显示' }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
+        <el-button v-waves class="filter-item" type="primary" icon="el-icon-full-screen" @click="zoom" />
+      </div>
+    </template>
     <vxe-grid
       ref="xTable"
       border
@@ -11,6 +46,7 @@
       keep-source
       show-footer
       size="small"
+      :cell-style="cellStyle"
       :footer-method="footerMethod"
       :footer-cell-class-name="footerCellClassName2"
       :loading="loading"
@@ -19,47 +55,14 @@
       :columns="tableColumn"
       :radio-config="{highlight: true}"
       :edit-config="{trigger: 'dblclick', mode: 'cell'}"
-      :toolbar-config="toolbarConfig"
       :data="list"
       @edit-closed="editClosedEvent"
       @page-change="handlePageChange"
     >
-      <template #toolbar_buttons>
-        <div class="filter-container">
-          <el-cascader v-model="listQuery.orderID" class="filter-item" placeholder="订单选择" :options="orders" :props="{ multiple: true, checkStrictly: true }" filterable allow-create default-first-option clearable @change="handleFilter" />
-          <el-select v-model="listQuery.type" clearable placeholder="出入库" class="filter-item" @change="handleFilter">
-            <el-option v-for="item in [{label:'出货',value:'DV'},{label:'入库',value:'WV'}]" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-          <el-input v-model="listQuery.factory" placeholder="加工场" style="width: 110px;" class="filter-item" clearable @keyup.enter.native="handleFilter" />
-          <el-date-picker v-model="listQuery.date" class="filter-item" type="datetimerange" :picker-options="pickerOptions" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" align="right" @change="handleFilter" />
-          <el-button v-waves class="filter-item" type="primary" icon="el-icon-refresh" @click="handleFilter">刷新</el-button>
-          <el-dropdown class="filter-item" split-button type="primary" @command="handleBatch">
-            批处理
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item command="isSettled">标记为已结算</el-dropdown-item>
-              <el-dropdown-item command="noSettled" disabled>标记为未结算</el-dropdown-item>
-              <el-dropdown-item command="del" divided disabled>删除</el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-          <el-dropdown class="filter-item" split-button type="primary" @command="printAndExport">
-            导出与打印
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item command="printEvent">打印</el-dropdown-item>
-              <el-dropdown-item command="exportDataEvent">导出</el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-          <el-dropdown class="filter-item" split-button type="primary" @command="handleBatch">
-            显示
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item command="settled">{{ listQuery.showSettled?'隐藏已结算':'显示已结算' }}</el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-          <el-button v-waves class="filter-item" type="primary" icon="el-icon-full-screen" @click="zoom" />
-        </div>
-      </template>
+
       <template v-slot:files_default="{ row, column }">
         <span>
-          <el-button v-if="row.files && row.files.length>0" :data-url="row.files?row.files[0]:''" type="primary" plain icon="el-icon-picture" circle @click.native="handleShowPic(column,row)" />
+          <el-button v-if="row.files && row.files.length>0" :data-url="row.files?row.files[row.files.length-1]:''" type="primary" plain icon="el-icon-picture" circle @click.native="handleShowPic(column,row)" />
         </span>
       </template>
       <template v-slot:type_default="{ row }">
@@ -118,6 +121,7 @@ export default {
         color: undefined,
         date: undefined,
         showSettled: false,
+        orderBy: 'desc',
         factory: undefined
       },
       tablePage: {
@@ -129,11 +133,11 @@ export default {
         layouts: ['Sizes', 'PrevJump', 'PrevPage', 'Number', 'NextPage', 'NextJump', 'FullJump', 'Total'],
         perfect: true
       },
-      toolbarConfig: {
-        slots: {
-          buttons: 'toolbar_buttons'
-        }
-      },
+      // toolbarConfig: {
+      //   slots: {
+      //     buttons: 'toolbar_buttons'
+      //   }
+      // },
       tableColumn: [
         { type: 'checkbox', width: 50 },
         { field: 'customername', title: '客户', width: 80 },
@@ -141,14 +145,15 @@ export default {
         { field: 'orderID', title: '订单ID', width: 100 },
         { field: 'orderName', title: '订单名', width: 80 },
         { field: 'color', title: '颜色', width: 80 },
-        { field: 'size', title: '规格', width: 80 },
+        { field: 'size', title: '规格', width: 80, editRender: { name: '$select', options: [{ label: '标准', value: '标准' }, { label: '加大', value: '加大' }, { label: '小码', value: '小码' }], props: { placeholder: '选择尺码' }}},
         { field: 'partName', title: '部位', width: 80 },
         { field: 'type', title: '出入库', slots: { default: 'type_default' }, width: 80 },
         { field: 'qty', title: '数量', width: 80, editRender: { name: '$input', props: { type: 'number' }}},
         { field: 'price', title: '单价', width: 80 },
         { field: 'sum', title: '小计', width: 80 },
+        { field: 'batch', title: '批号', width: 240, editRender: { name: 'input' }},
         { field: 'files', title: '底单', slots: { default: 'files_default' }, width: 60 },
-        { field: 'createTimes', title: '记录时间', width: 240, editRender: { name: '$input', props: { type: 'datetime' }}},
+        { field: 'createTimes', title: '记录时间', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
         { field: 'remark', title: '备注', editRender: { name: 'input' }}
       ],
       orders: [],
@@ -209,6 +214,14 @@ export default {
     this.getUser()
   },
   methods: {
+    cellStyle({ row, rowIndex, column }) {
+      if (row.isSettled) {
+        return {
+          backgroundColor: '#187',
+          color: '#ffffff'
+        }
+      }
+    },
     zoom(e) {
       this.$refs.xTable.zoom()
     },
@@ -221,25 +234,15 @@ export default {
           beforePrintMethod: ({ content }) => {
             // 拦截打印之前，返回自定义的 html 内容
             return `
-      <h1 class="title">出入库流水</h1>
-      <div class="my-top">
-        <div class="my-list-row">
-          <div class="my-list-col">商品名称：vxe-table</div>
-          <div class="my-list-col">发货单号：X2665847132654</div>
-          <div class="my-list-col">发货日期：2020-09-20</div>
-        </div>
-        <div class="my-list-row">
-          <div class="my-list-col">收货姓名：小徐</div>
-          <div class="my-list-col">收货地址：火星第七区18号001</div>
-          <div class="my-list-col">联系电话：10086</div>
-        </div>
-      </div>
+      <h1 class="title">
+      ` + this.listQuery.orderID + (this.listQuery.type === 'DV' ? '出库' : '入库') +
+      `流水</h1>
       ` + content + `
       <div class="my-bottom">
         <div class="my-list-row">
           <div class="my-list-col"></div>
           <div class="my-list-col">创建人：泛艺智造</div>
-          <div class="my-list-col">创建日期：` + dateMethods.toDateString(new Date()) + `</div>
+          <div class="my-list-col">打印日期：` + dateMethods.toDateString(new Date()) + `</div>
         </div>
       </div>
       `
@@ -258,7 +261,7 @@ export default {
       })
     },
     getrOrders() {
-      getrOrders().then(response => {
+      getrOrders({ where: 'disuse: false' }).then(response => {
         console.log(response)
         var data = response.data
         this.order = data
@@ -317,7 +320,7 @@ export default {
         'offset': (this.tablePage.currentPage - 1) * this.tablePage.pageSize,
         'limit': this.tablePage.pageSize,
         'where': customerID + showSettled + orderID + color + type + date + factory,
-        'orderBy': '"createTimes","desc"'
+        'orderBy': '"createTimes","' + this.listQuery.orderBy + '"' // desc,asc
       }
       getData(s).then(response => {
         const data = response.data.map(function(obj) {
@@ -329,8 +332,8 @@ export default {
         const newData = []
         for (var i = 0; i < data.length; i++) {
           const item = data[i]
-          if (item.partID === 'bm') {
-            const price = this.order.find(e => e.orderID === item.orderID).price ?? 0
+          if (item.partID === 'bm' || item.partID === 'xbz' || item.partID === 'bz') {
+            const price = item.price ? item.price : (this.order.find(e => e.orderID === item.orderID)?.price ?? '-')
             item['price'] = price
             item['sum'] = price * item.qty
           }
@@ -346,6 +349,7 @@ export default {
                 orderID: item.orderID,
                 orderName: item.orderName,
                 type: item.type,
+                _id: item._id,
                 remark: item.remark,
                 partID: item.parts[n].name,
                 partName: item.parts[n].name,
@@ -385,7 +389,7 @@ export default {
       const bm = data.filter(e => e.partID === 'bm').reduce((total, currentValue, currentIndex, arr) => { return total + currentValue.qty * 1 }, 0)
       const drz = data.filter(e => e.partID === 'drz').reduce((total, currentValue, currentIndex, arr) => { return total + currentValue.qty * 1 }, 0)
       const xbz = data.filter(e => e.partID === 'xbz').reduce((total, currentValue, currentIndex, arr) => { return total + currentValue.qty * 1 }, 0)
-      const ss = data.filter(e => e.partID === 'bm').reduce((total, currentValue, currentIndex, arr) => { return total + currentValue.sum * 1 }, 0)
+      const ss = data.filter(e => e.partID === 'bm' || e.partID === 'xbz' || e.partID === 'bz').reduce((total, currentValue, currentIndex, arr) => { return total + currentValue.sum * 1 }, 0)
       const s = data.filter(e => e.partID === 'bm' && e.size === '小码').reduce((total, currentValue, currentIndex, arr) => { return total + currentValue.qty * 1 }, 0)
       const m = data.filter(e => e.partID === 'bm' && e.size === '标准').reduce((total, currentValue, currentIndex, arr) => { return total + currentValue.qty * 1 }, 0)
       const l = data.filter(e => e.partID === 'bm' && e.size === '加大').reduce((total, currentValue, currentIndex, arr) => { return total + currentValue.qty * 1 }, 0)
@@ -478,7 +482,7 @@ export default {
     },
     handleShowPic(index, row) {
       console.log(index, row)
-      const file = row.files[0]
+      const file = row.files[row.files.length - 1]
       getDownloadUrl({ fileid: file }).then(response => {
         console.log(response)
         this.$notify({
@@ -492,9 +496,12 @@ export default {
     },
     handleBatch(e) {
       console.log(e)
-      if (this.multipleSelection && this.multipleSelection.length > 0 && e === 'isSettled') {
+      const $table = this.$refs.xTable
+      const checkboxRecords = $table.getCheckboxRecords()
+      if (checkboxRecords && checkboxRecords.length > 0 && e === 'isSettled') {
+        console.log(checkboxRecords)
         // 标记为已结算
-        updateIsSettled(this.multipleSelection).then(response => {
+        updateIsSettled(checkboxRecords).then(response => {
           console.log(response)
           this.getList()
           this.$message({
@@ -512,11 +519,17 @@ export default {
         this.listQuery.showSettled = !this.listQuery.showSettled
         this.getList()
       }
+      if (e === 'orderBy') {
+        // 排序
+        this.listQuery.orderBy === 'desc' ? this.listQuery.orderBy = 'asc' : this.listQuery.orderBy = 'desc'
+        this.getList()
+      }
     },
     // 编辑实时更新数据
     editClosedEvent(e) {
       const newRow = { ...e.row }
       newRow.createTimes = dateMethods.timestamp(newRow.createTimes) / 1000
+      newRow.qty = newRow.qty * 1
       console.log('editClosedEvent', newRow)
       delete newRow._XID
       upData({ 'collection': 'iolist', 'id': newRow._id, 'data': newRow }).then(response => {
@@ -531,6 +544,9 @@ export default {
 }
 </script>
 <style>
+  .vxe-toolbar.size--small {
+    height: auto;
+  }
   .filter-item {margin-right: 5px;}
   .el-table__row > td {
 

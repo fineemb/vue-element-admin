@@ -1,11 +1,16 @@
 <template>
-  <div id="app">
+  <div id="app" @click="updateLastTime">
     <router-view />
   </div>
 </template>
 
 <script>
 export default {
-  name: 'App'
+  name: 'App',
+  methods: {
+    updateLastTime() {
+      this.$store.commit('login/SET_LASTTIME', new Date().getTime())
+    }
+  }
 }
 </script>

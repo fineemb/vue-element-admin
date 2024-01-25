@@ -52,6 +52,7 @@ const client = {
       this.trace({ cmd: 'onopen', msg: `onopen` })
       this.connected = true
       this.reconnectTimes = 0
+      this.msgQueue = []
       this.heartJumping = true
 
       // 看自己需要
@@ -82,7 +83,7 @@ const client = {
         return
       }
       data = JSON.parse(data)
-      if (data.cmd === 'heart') {
+      if (data.type === 'heart') {
         this.heartJumping = true
         return
       }

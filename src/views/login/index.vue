@@ -1,84 +1,75 @@
 <template>
+
   <div class="login-container">
-    <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" autocomplete="on" label-position="left">
-
-      <div class="title-container">
-        <h3 class="title">纺艺刺绣后台管理系统</h3>
+    <div class="title-container">
+      <h3 class="title">纺艺刺绣后台管理系统</h3>
+      <div class="login_header">
+        <a :class="{active:cur==false + ' al'}" @click="cur=false">微信登录</a>
+        <a :class="{active:cur==true + ' al'}" @click="cur=true">密码登录</a>
       </div>
-
-      <el-form-item prop="username">
-        <span class="svg-container">
-          <svg-icon icon-class="user" />
-        </span>
-        <el-input
-          ref="username"
-          v-model="loginForm.username"
-          placeholder="用户名"
-          name="username"
-          type="text"
-          tabindex="1"
-          autocomplete="on"
-        />
-      </el-form-item>
-
-      <el-tooltip v-model="capsTooltip" content="Caps lock is On" placement="right" manual>
-        <el-form-item prop="password">
+    </div>
+    <div v-show="cur==true" class="Cbody_item">
+      <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" autocomplete="on" label-position="left">
+        <el-form-item prop="username">
           <span class="svg-container">
-            <svg-icon icon-class="password" />
+            <svg-icon icon-class="user" />
           </span>
           <el-input
-            :key="passwordType"
-            ref="password"
-            v-model="loginForm.password"
-            :type="passwordType"
-            placeholder="密码"
-            name="password"
-            tabindex="2"
+            ref="username"
+            v-model="loginForm.username"
+            placeholder="用户名"
+            name="username"
+            type="text"
+            tabindex="1"
             autocomplete="on"
-            @keyup.native="checkCapslock"
-            @blur="capsTooltip = false"
-            @keyup.enter.native="handleLogin"
           />
-          <span class="show-pwd" @click="showPwd">
-            <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
-          </span>
         </el-form-item>
-      </el-tooltip>
-
-      <el-button :loading="loading" type="primary" @click.native.prevent="handleLogin">登录</el-button>
-      <el-button class="thirdparty-button" type="primary" icon="wechat" @click="showDialog=true">
-        微信登录
-      </el-button>
-      <div style="position:relative">
-        <!-- <div class="tips">
-          <span>Username : admin</span>
-          <span>Password : any</span>
-        </div>
-        <div class="tips">
-          <span style="margin-right:18px;">Username : editor</span>
-          <span>Password : any</span>
-        </div> -->
-
-      </div>
-    </el-form>
-
-    <el-dialog title="微信登录" :visible.sync="showDialog">
-      还没接通
-      <br>
-      <br>
-      <br>
-      <social-sign />
-    </el-dialog>
-  </div>
-</template>
+        <el-tooltip v-model="capsTooltip" content="Caps lock is On" placement="right" manual>
+          <el-form-item prop="password">
+            <span class="svg-container">
+              <svg-icon icon-class="password" />
+            </span>
+            <el-input
+              :key="passwordType"
+              ref="password"
+              v-model="loginForm.password"
+              :type="passwordType"
+              placeholder="密码"
+              name="password"
+              tabindex="2"
+              autocomplete="on"
+              @keyup.native="checkCapslock"
+              @blur="capsTooltip = false"
+              @keyup.enter.native="handleLogin"
+            />
+            <span class="show-pwd" @click="showPwd">
+              <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
+            </span>
+          </el-form-item>
+        </el-tooltip>
+        <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">登录</el-button>
+      </el-form>
+    </div>
+    <div v-show="cur==false" class="Cbody_item">
+      <wxlogin
+        id="wxcode"
+        style="text-align: center"
+        theme="white"
+        appid="wx7d03fb839eb55f81"
+        href="data:text/css;base64,QGNoYXJzZXQgInV0Zi04IjsuaW1wb3dlckJveCAucXJjb2Rle3dpZHRoOjE4MHB4O2JvcmRlcjowO21hcmdpbi10b3A6MTNweH0uaW1wb3dlckJveCAudGl0bGV7ZGlzcGxheTpub25lfS5pbXBvd2VyQm94IC5pbmZve3dpZHRoOjE2MHB4fS5zdGF0dXNfaWNvbntkaXNwbGF5Om5vbmV9LmltcG93ZXJCb3ggLnN0YXR1c3t0ZXh0LWFsaWduOmNlbnRlcn0ud3JwX2NvZGV7d2lkdGg6MjA2cHg7YmFja2dyb3VuZC1jb2xvcjojZmZmO2JvcmRlcjoxcHggc29saWQgI2U1ZTVlNTtoZWlnaHQ6MjA2cHg7bWFyZ2luOjAgYXV0bztib3JkZXItcmFkaXVzOjRweH0="
+        scope="snsapi_login"
+        :redirect_uri="redirect_uri"
+      />
+    </div>
+  </div></template>
 
 <script>
 import { validUsername } from '@/utils/validate'
-import SocialSign from './components/SocialSignin'
+import wxlogin from 'vue-wxlogin'
 
 export default {
   name: 'Login',
-  components: { SocialSign },
+  components: { wxlogin },
   data() {
     const validateUsername = (rule, value, callback) => {
       if (!validUsername(value)) {
@@ -107,7 +98,8 @@ export default {
       capsTooltip: false,
       loading: false,
       showDialog: false,
-      redirect: undefined,
+      cur: false,
+      redirect_uri: encodeURIComponent('https://factory.dnxh.cn:886/#/authredirect?redirect=' + window.location.origin),
       otherQuery: {}
     }
   },
@@ -125,6 +117,13 @@ export default {
   },
   created() {
     // window.addEventListener('storage', this.afterQRScan)
+    const { query } = this.$route
+    const { code } = query
+    if (code) {
+      console.log(code)
+      this.afterQRScan(code)
+    }
+    // this.redirect_uri = encodeURIComponent('https://factory.dnxh.cn:886/#/authredirect?redirect=' + window.location.origin)
   },
   mounted() {
     if (this.loginForm.username === '') {
@@ -134,7 +133,7 @@ export default {
     }
   },
   destroyed() {
-    // window.removeEventListener('storage', this.afterQRScan)
+    window.removeEventListener('storage', this.afterQRScan)
   },
   methods: {
     checkCapslock(e) {
@@ -176,25 +175,17 @@ export default {
         }
         return acc
       }, {})
+    },
+    afterQRScan(code) {
+      if (code) {
+        this.$store.dispatch('user/LoginByThirdparty', code).then((e) => {
+          console.log(e)
+          this.$router.push({ path: this.redirect || '/' })
+        })
+      } else {
+        alert('第三方登录失败')
+      }
     }
-    // afterQRScan() {
-    //   if (e.key === 'x-admin-oauth-code') {
-    //     const code = getQueryObject(e.newValue)
-    //     const codeMap = {
-    //       wechat: 'code',
-    //       tencent: 'code'
-    //     }
-    //     const type = codeMap[this.auth_type]
-    //     const codeName = code[type]
-    //     if (codeName) {
-    //       this.$store.dispatch('LoginByThirdparty', codeName).then(() => {
-    //         this.$router.push({ path: this.redirect || '/' })
-    //       })
-    //     } else {
-    //       alert('第三方登录失败')
-    //     }
-    //   }
-    // }
   }
 }
 </script>
@@ -212,7 +203,32 @@ $cursor: #fff;
     color: $cursor;
   }
 }
+.login_header>a, .login_header>a:focus, .login_header>a:hover{
+	color: #fff;
+  margin: 50px;
+}
+.Cbody_item{
+	border: 0px solid #999;
+	overflow: hidden;
+}
 
+.login_header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+.login_header span{
+	margin-right: 20px;
+	cursor: pointer;
+}
+
+.active{
+    color:#fff;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #fff;
+}
+.hidden{
+		display: none;
+	}
 /* reset element-ui css */
 .login-container {
   .el-input {
@@ -247,7 +263,7 @@ $cursor: #fff;
 </style>
 
 <style lang="scss" scoped>
-$bg:#2d3a4b;
+$bg:#283443;
 $dark_gray:#889aa4;
 $light_gray:#eee;
 
@@ -261,7 +277,7 @@ $light_gray:#eee;
     position: relative;
     width: 520px;
     max-width: 100%;
-    padding: 160px 35px 0;
+    padding: 10px 35px 0;
     margin: 0 auto;
     overflow: hidden;
   }
@@ -288,6 +304,7 @@ $light_gray:#eee;
 
   .title-container {
     position: relative;
+    padding: 160px 35px 0;
 
     .title {
       font-size: 26px;

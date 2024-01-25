@@ -98,7 +98,8 @@ export default {
         { title: '工价', children: [
           { field: 'review.review_data.price', title: '元/千针', width: 100, editRender: { name: '$input', type: 'float', props: { type: 'float' }}},
           { field: 'review.review_data.price4m', title: '元/车', width: 100, editRender: { name: '$input', type: 'float', props: { type: 'float', digits: 1 }}},
-          { field: 'review.review_data.price4p', title: '元/片', width: 100, editRender: { name: '$input', type: 'float', props: { type: 'float', digits: 1 }}},
+          { field: 'review.review_data.appliqueS', title: '片/件', width: 100, editRender: { name: '$input', type: 'float', props: { type: 'number' }}},
+          { field: 'review.review_data.appliquePrice', title: '分/片', width: 100, editRender: { name: '$input', type: 'float', props: { type: 'number' }}},
           { field: 'review.review_data.perk', title: '补贴', width: 100, editRender: { name: '$input', type: 'number', props: { type: 'number' }}}
         ] },
         { field: 'review.review_updateTime', title: '记录时间', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
@@ -218,7 +219,7 @@ export default {
       getData(s).then(response => {
         const data = response.data.map(function(obj) {
           var rObj = obj
-          rObj.review.review_updateTime = dateMethods.toDateString(new Date(rObj.review.review_updateTime))
+          rObj.review.review_updateTime = dateMethods.toDateString(new Date(rObj.review.review_updateTime * 1000))
           return rObj
         })
         this.list = data
@@ -273,6 +274,10 @@ export default {
 }
 </script>
 <style>
+
+.vxe-toolbar.size--small {
+    height: auto;
+  }
   .filter-item {margin-right: 5px;}
   .el-table .isSettled {
     background: #f0f9eb;

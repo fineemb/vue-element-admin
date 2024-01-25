@@ -6,6 +6,7 @@
 import echarts from 'echarts'
 require('echarts/theme/macarons') // echarts theme
 import resize from './mixins/resize'
+import dateMethods from 'xe-utils/date'
 
 export default {
   mixins: [resize],
@@ -68,7 +69,7 @@ export default {
 
       data.data.forEach((item, index) => {
         yAxisData_plant.push(item.plant)
-        const bg = ['#2ec7c9', '#b6a2de', '#5ab1ef', '#ffb980', '#d87a80', '#8d98b3', '#e5cf0d', '#97b552', '#95706d', '#dc69aa', '#07a2a4', '#9a7fd1', '#588dd5', '#f5994e', '#c05050', '#59678c', '#c9ab00', '#7eb00a', '#6f5553', '#c14089']
+        // const bg = ['#2ec7c9', '#b6a2de', '#5ab1ef', '#ffb980', '#d87a80', '#8d98b3', '#e5cf0d', '#97b552', '#95706d', '#dc69aa', '#07a2a4', '#9a7fd1', '#588dd5', '#f5994e', '#c05050', '#59678c', '#c9ab00', '#7eb00a', '#6f5553', '#c14089']
         item.list.forEach((listItem, listIndex) => {
           const startTime = new Date(listItem.startTime).getTime()
           const endTime = new Date(listItem.endTime).getTime()
@@ -84,7 +85,7 @@ export default {
             ],
             itemStyle: {
               normal: {
-                color: bg[listItem.colorNum % bg.length]
+                color: this.stringToColorCode(listItem.patternName) // bg[listItem.colorNum % bg.length]
               }
             }
           })
@@ -94,12 +95,12 @@ export default {
         {
           tooltip: {
             formatter: function(params) {
-              return params.marker + params.name
+              return params.name + ' <br/>产量：' + params.value[3] + ' <br/>开始时间：' + dateMethods.toDateString(params.value[1], 'yyyy-MM-dd HH:mm:ss') + ' <br/>结束时间：' + dateMethods.toDateString(params.value[2], 'yyyy-MM-dd HH:mm:ss') + ' <br/>连续耗时：' + dateMethods.getDateDiff(params.value[1], params.value[2]).dd + '天'
             }
           },
           grid: {
             top: 48,
-            left: 40,
+            left: 80,
             right: 40,
             bottom: 50,
             height: 400
@@ -146,7 +147,10 @@ export default {
             },
             axisLabel: {
               show: true,
-              fontSize: 14
+              fontSize: 14,
+              formatter: function(value, index) {
+                return value + '号机台'
+              }
             },
             splitLine: {
               show: true
@@ -187,7 +191,20 @@ export default {
           }]
         }
       )
+    },
+    stringToColorCode(str) {
+      let hash = 0
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash)
+      }
+      let color = '#'
+      for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xff
+        color += ('00' + value.toString(16)).substr(-2)
+      }
+      return color
     }
+
   }
 }
 </script>

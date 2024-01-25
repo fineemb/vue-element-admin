@@ -1,22 +1,56 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <div v-for="item in machines" :key="item.mac" class="bg-purple updateBox">
-        <el-progress :percentage="item.curStitch?item.curStitch/item.patternStitch*100:0" :show-text="false" :stroke-width="5" :color="item.reason" />
+      <div id="divPlugin" />
+      <div v-for="item in machines" :key="item.mac" class="updateBox">
+        <el-progress class="progress" :percentage="item.percentage" :show-text="false" :stroke-width="5" :color="item.reason" />
         <el-alert v-if="item.status===404" class="patternAlert" :title="item.status===404?'文件'+item.filename+'未找到不能预览':''" type="error" />
-        <el-tooltip>
-          <div slot="content">{{ item.userName }}</div>
-          <el-avatar :src="item.userIcon" style="position: absolute;top: -7px;right: -7px;z-index: 1;"> 未知 </el-avatar>
-        </el-tooltip>
-        <el-upload class="upload" drag :on-success="handleSuccess" :data="{mac: item.value}" :action="upload_url">
+        <el-button class="cctv" type="primary" icon="el-icon-video-camera" circle @click="hk_login(item.cctv)" />
+        <el-button class="info" type="primary" icon="el-icon-s-data" circle />
+        <div @click="openDesigns(item.id)">
+          <el-tooltip placement="top-start">
+            <div slot="content">{{ item.userName }}<br>点击管理花样</div>
+            <el-badge :value="item.label" class="macid" style="position: absolute;top: -7px;right: -7px;z-index: 1;" type="primary">
+              <el-avatar :src="item.userIcon">未知</el-avatar>
+            </el-badge>
+          </el-tooltip>
+        </div>
+        <!-- <el-tooltip>
+          <div slot="content" :data="{mac: item.mac}" @click="openDesigns">{{ item.userName }}</div>
+        </el-tooltip> -->
+        <el-upload class="upload" drag :on-success="handleSuccess" multiple :data="{mac: item.value, name: uploadName}" :action="upload_url" :before-upload="beforeUpload" :name="uploadName">
           <el-tooltip>
             <div slot="content">文件名：{{ item.filename }}<br>状态：{{ item.ss }}<br>针数：{{ item.patternStitch }}<br>当前位置：{{ item.curStitch }}</div>
             <canvas :id="item.value" :ref="item.value" class="dstView">这里是看花样预览的</canvas>
           </el-tooltip>
           <!-- <i class="el-icon-upload"></i> -->
-          <div class="el-upload__text"><el-tag effect="dark" class="mark" type="primary">{{ item.label }}</el-tag>将文件拖到此处，或<em>点击上传</em></div>
+          <!-- <div class="el-upload__text"><el-tag effect="dark" class="mark" type="primary">{{ item.label }}</el-tag>将文件拖到此处，或<em>点击上传</em></div> -->
         </el-upload>
       </div>
+      <el-drawer
+        title="当前花样列表"
+        :visible.sync="drawer"
+        direction="rtl"
+        :before-close="designsClose"
+        custom-class="drawer"
+      >
+        <span slot="title">{{ openDevice }}机器花样管理
+          <el-button v-if="checkedDesigns.length > 0" size="mini" type="danger" icon="el-icon-delete" circle @click="delDesign()" />
+        </span>
+        <el-checkbox-group v-model="checkedDesigns" class="designCheckboxGroup" @change="handleCheckedDesignsChange">
+          <el-checkbox v-for="(item, index) in design4device" :key="item.machinePatternCode" :label="index" class="updateBox">
+            <el-alert v-if="item.status===404" class="patternAlert" :title="item.status===404?'文件'+item.filename+'未找到不能预览':''" type="error" />
+            <div class="design">
+              <el-tooltip>
+                <div slot="content">机器内编号：{{ item.machinePatternCode }}</div>
+                <canvas :id="'design_'+item.machinePatternCode" :ref="item.patternName" class="dstView">这里是看花样预览的</canvas>
+              </el-tooltip>
+              <!-- <i class="el-icon-upload"></i> -->
+              <div class="design_text">文件名：{{ item.patternName }}<br>针数：<em>{{ item.patternStitch }}</em></div>
+            </div>
+          </el-checkbox>
+        </el-checkbox-group>
+      </el-drawer>
     </div>
   </div>
 </template>
@@ -24,9 +58,11 @@
 <script>
 // import axios from 'axios'
 import eventBus from '../../utils/eventBus'
-import { getUserInfo, getDstFile } from '@/api/user'
+import { getUserInfo, getDstFile, getDesigns, delDesigns } from '@/api/user'
 import waves from '@/directive/waves' // waves directive
+import { Loading } from 'element-ui'
 // arr to obj, such as { CN : "China", US : "USA" }
+let loadingInstance = null
 export default {
   name: 'UpdataPattern',
   directives: { waves },
@@ -42,8 +78,15 @@ export default {
   },
   data() {
     return {
+      // loadingInstance: null,
+      checkedDesigns: [],
+      uploadName: null,
+      drawer: false,
       showEdit: [],
       showBtn: [],
+      openDeviceId: null,
+      openDevice: null,
+      design4device: [],
       upload_url: process.env.VUE_APP_BASE_API + '/upload',
       showBtnOrdinary: true,
       tableKey: 0,
@@ -74,69 +117,345 @@ export default {
       }],
       machines: [{
         value: '1281909412AA',
-        label: '01号'
+        label: '01号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.205'
       }, {
         value: '1282404669AA',
-        label: '02号'
+        label: '02号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.205'
       }, {
         value: '1282404744AA',
-        label: '03号'
+        label: '03号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.210'
       }, {
         value: '1281909392AA',
-        label: '04号'
+        label: '04号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.210'
       }, {
         value: '1282404761AA',
-        label: '05号'
+        label: '05号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.204'
       }, {
         value: '1281909414AA',
-        label: '06号'
+        label: '06号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.204'
       }, {
         value: '1281909398AA',
-        label: '07号'
+        label: '07号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.203'
       }, {
         value: '1282404640AA',
-        label: '08号'
+        label: '08号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.203'
       }, {
         value: '1282404672AA',
-        label: '09号'
+        label: '09号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.209'
       }, {
         value: '1281909385AA',
-        label: '10号'
+        label: '10号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.209'
       }, {
         value: '1281905521AA',
-        label: '11号'
+        label: '11号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.202'
       }, {
         value: '1281905538AA',
-        label: '12号'
+        label: '12号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.202'
       }, {
         value: '1281905287AA',
-        label: '13号'
+        label: '13号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.208'
       }, {
         value: '1281909382AA',
-        label: '14号'
+        label: '14号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.208'
       }, {
         value: '1281909405AA',
-        label: '15号'
+        label: '15号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.207'
       }, {
         value: '1282404633AA',
-        label: '16号'
+        label: '16号',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.207'
       }, {
         value: '1282001535AA',
-        label: '打样机'
+        label: '样机',
+        curStitch: 0,
+        patternStitch: 0,
+        cctv: '192.168.1.206'
       }],
       downloadLoading: false
     }
   },
+  watch: {
+    design4device: {
+      handler: function(newValue) {
+        console.log('New: ' + newValue)
+        for (var i = 0; i < newValue.length; i++) {
+          const item = newValue[i]
+          getDstFile({ file: item.patternName, mac: item.patternName, machinePatternCode: item.machinePatternCode }).then(response => {
+            if (response.message === 200) {
+              this.dstCanvas(response.data.data, 'design_' + response.machinePatternCode, 110, 110)
+            }
+          }).catch(err => {
+            console.log(err)
+            this.$message.error('服务器未找到这个文件' + decodeURI(item.patternName))
+          })
+        }
+      },
+      deep: true
+    }
+  },
   mounted() {
     eventBus.$on('message', this.message)
+    this.$nextTick(() => {
+      setTimeout(() => {
+        this.hk_Init()
+      }, 1000)
+    })
   },
   beforeDestroy() {
     eventBus.$off('message', this.message)
+    const stopAll = () => {
+      return new Promise(resolve => {
+        // eslint-disable-next-line no-undef
+        WebVideoCtrl.I_StopAllPlay().then(() => {		// 先stop当前播放的视频，全部stop再hide
+          resolve('success')
+        })
+      })
+    }
+
+    stopAll().then(res => {
+      if (res === 'success') {
+        try {
+          // 在I_StopAllPlay()异步操作完成后再执行
+          // eslint-disable-next-line no-undef
+          WebVideoCtrl.I_HideWnd()
+        } catch (e) {
+          console.error('销毁失败', e)
+        }
+      }
+    })
   },
   created() {
     this.getUser()
   },
   methods: {
+    hk_Init() {
+      const _this = this
+      // eslint-disable-next-line no-undef
+      WebVideoCtrl.I_InitPlugin({
+        bWndFull: true,
+        iWndowType: _this.reviewdialogVisible === false ? 2 : 1,
+        bDebugMode: true,
+        // ... 其他回调函数的定
+        cbInitPluginComplete: function() {
+          // console.log('插件初始化') item.value
+          // eslint-disable-next-line no-undef
+          WebVideoCtrl.I_InsertOBJECTPlugin('divPlugin').then(() => {
+            _this.checkInit = true
+            // 检查插件是否最新
+            // eslint-disable-next-line no-undef
+            WebVideoCtrl.I_CheckPluginVersion().then((bFlag) => {
+              if (bFlag) {
+                alert(
+                  '检测到新的插件版本，双击开发包目录里的HCWebSDKPlugin.exe升级！'
+                )
+                return
+              }
+            })
+          },
+          () => {
+            _this.$confirm('查看监控需要下载控件安装，安装后请重新刷新页面', '控件下载', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            })
+              .then(() => {
+                window.open('./static/hk/HCWebSDKPlugin.exe')
+              })
+              .catch(() => {
+                _this.$message.info('取消')
+              })
+          })
+        }
+      })
+    },
+    hk_login(ip) {
+      const _this = this
+      // eslint-disable-next-line no-undef
+      WebVideoCtrl.I_Login(
+        ip,
+        '1',
+        '80',
+        'admin',
+        'laitouFYmima8',
+        {
+          timeout: 3000,
+          async: false,
+          success: function(xmlDoc) {
+            console.log(' 登录成功！')
+            _this.hk_play(ip)
+          },
+          error: function(oError) {
+            console.log(' 登录失败！', oError)
+            if (oError.errorCode === 2001) {
+              _this.hk_play(ip)
+            }
+          }
+        }
+      )
+    },
+    hk_play(ip) {
+      const _this = this
+      // eslint-disable-next-line no-undef
+      var oWndInfo = WebVideoCtrl.I_GetWindowStatus(0)
+      if (oWndInfo != null) { // 已经在播放了，先停止
+        // eslint-disable-next-line no-undef
+        WebVideoCtrl.I_Stop({
+          success: function() {
+            _this.hk_play(ip)
+          }
+        })
+      }
+      // eslint-disable-next-line no-undef
+      WebVideoCtrl.I_StartRealPlay(
+        ip + '_80', {
+          iStreamType: 1,
+          iChannelID: 1,
+          bZeroChannel: false,
+          success: function() {
+            console.log(' 开始预览成功！')
+          },
+          error: function(oError) {
+            console.log(' 开始预览失败！', oError)
+          }
+        })
+    },
+    handleCheckedDesignsChange(e) {
+      console.log('选择', e)
+    },
+    beforeUpload(file) {
+      // 对文件名进行编码转换
+      const newName = encodeURIComponent(file.name)
+      this.uploadName = newName
+      return true
+    },
+    delDesign(e) {
+      console.log('删除花样', e)
+      loadingInstance = Loading.service({
+        target: '.drawer',
+        text: '正在删除花样，等待反馈中',
+        customClass: 'designLoading'
+      })
+      // 组织删除花样数据
+      const ds = []
+      for (var i = 0; i < this.checkedDesigns.length; i++) {
+        const d4d = this.design4device
+        ds.push({
+          'deviceId': this.openDeviceId,
+          'machinePatternCode': d4d[this.checkedDesigns[i]].machinePatternCode,
+          'patternCode': d4d[this.checkedDesigns[i]].patternCode
+        })
+      }
+      delDesigns(ds).then(response => {
+        console.log(response)
+        // this.$nextTick(() => {
+        loadingInstance.close()
+        // })
+        if (response.data === 0) {
+          this.openDesigns(response.deviceId)
+        } else if (response.data === 'outtime') {
+          this.$message.error('删除花样超时')
+        } else if (response.data === 2) {
+          this.$message.error('花样正在使用，不能删除')
+        }
+      }).catch(err => {
+        console.log(err)
+        // this.$nextTick(() => {
+        loadingInstance.close()
+        // })
+        this.$message.error('删除机器花样文件失败')
+      })
+    },
+    openDesigns(e) {
+      console.log('打开花样列表', e)
+      this.checkedDesigns = []
+      const machine = this.machines[this.machines.findIndex(x => x.id === e)]
+      const state = machine.ss
+      if (!state || state === 'offline (null)') {
+        console.log('离线')
+      } else {
+        loadingInstance = Loading.service({
+          target: '.drawer',
+          text: '正在获取机器花样文件',
+          customClass: 'designLoading'
+        })
+        this.drawer = true
+        this.openDeviceId = e
+        this.openDevice = machine.label
+        getDesigns({
+          'deviceId': e,
+          'page': 1,
+          'size': 20
+        }).then(response => {
+          // this.$nextTick(() => { // 以服务的方式调用的 Loading 需要异步关闭
+          loadingInstance.close()
+          // })
+          console.log(response)
+          this.design4device = response.data.items
+        // this.users = response.data
+        }).catch(err => {
+          console.log(err)
+          this.$message.error('加载机器花样文件失败')
+          // this.$nextTick(() => { // 以服务的方式调用的 Loading 需要异步关闭
+          this.loadingInstance.close()
+          // })
+        })
+      }
+    },
+    designsClose(e) {
+      // console.log('关闭花样列表', e)
+      this.drawer = false
+      this.design4device = []
+      // this.$nextTick(() => { // 以服务的方式调用的 Loading 需要异步关闭
+      loadingInstance.close()
+      // })
+    },
     getUser() {
       getUserInfo().then(response => {
         // console.log(response)
@@ -144,6 +463,9 @@ export default {
       })
     },
     handleSuccess(response, file, fileList) {
+      this.$alert('请确认是否需要重新设置短针过滤', '过滤开关提示', {
+        confirmButtonText: '确定'
+      })
       console.log(response)
       if (response.reason) {
         this.$message.error('上传失败：' + response.reason)
@@ -161,50 +483,53 @@ export default {
         this.machines.splice(machineIndex, 1, md)
       }
       if (res.type === 'state') {
-        const icon = this.users.find(e => e.name === res.data.user.userId)?.avatarUrl || ''
+        const data = res.data
+        const icon = this.users.find(e => e.name === data.user.userId)?.avatarUrl || ''
         const userName = this.users.find(e => e.name === res.data.user.userId)?.name || ''
         const curStitch = res.data.pattern.curStitch
         const reason = res.data.machineState.reason
         const patternStitch = res.data.pattern.patternStitch
         const filename = res.data.pattern.patternName
-        const machineIndex = this.machines.findIndex(e => e.value === res.data.mac)
+        const machineIndex = this.machines.findIndex(e => e.value === data.mac)
         const md = this.machines[machineIndex]
         // console.log(machineIndex)
+        md['id'] = res.data.machineState.id
         md['userIcon'] = icon
         md['userName'] = userName
         md['ss'] = res.data.machineState.state + ' (' + res.data.machineState.reason + ')'
         // let color =
-        md['reason'] = (reason === 'complete') ? '#5cb87a' : ((reason === 'break') ? '#aa3535' : '#409eff')
+        md['reason'] = (reason === '花样完成') ? '#5cb87a' : ((reason === '断线') ? '#aa3535' : ((reason === '手动') ? '#fff21a' : '#409eff'))
         if (this.machines[machineIndex].filename && this.machines[machineIndex].curStitch !== curStitch) {
           // 刷新版带
-          // this.dstCanvas(this.machines[machineIndex].file, this.machines[machineIndex].value)
+          this.dstCanvas(this.machines[machineIndex].file, this.machines[machineIndex].value, 290, 180)
           md['curStitch'] = curStitch
           md['patternStitch'] = patternStitch
+          md['percentage'] = Math.floor(curStitch ? curStitch / patternStitch * 100 : 0)
         }
         this.machines.splice(machineIndex, 1, md)
         if (filename && this.machines[machineIndex].filename !== filename) {
           // 刷新版带
           getDstFile({ file: filename, mac: res.data.mac }).then(response => {
-            if (response.message === 404) {
-              this.$message.error('服务器未找到这个文件' + decodeURI(response.file))
-            }
             if (response.message === 200) {
               md['filename'] = response.filename
               md['file'] = response.data.data
               this.machines.splice(machineIndex, 1, md)
-              this.dstCanvas(response.data.data, response.mac)
+              this.dstCanvas(response.data.data, response.mac, 290, 180)
             }
           }, error => {
             console.log(error)
             md['filename'] = decodeURI(error.response?.data.filename)
             md['status'] = error.response?.data.message
             this.machines.splice(machineIndex, 1, md)
+          }).catch(err => {
+            console.log(err)
+            this.$message.error('服务器未找到这个文件' + decodeURI(filename))
           })
         }
       }
     },
-    dstCanvas: function(data, mac) {
-      const curStitch = this.machines.find(e => e.value === mac).curStitch
+    dstCanvas: function(data, mac, w, h) {
+      const curStitch = this.machines.find(e => e.value === mac)?.curStitch
       const uint8 = new Uint8Array(data)
       const head = String.fromCharCode.apply(null, uint8.slice(0, 512))
       const headinfo = /LA:(.*)\rST:(.*)\rCO:(.*)\r\+X:(.*)\r-X:(.*)\r\+Y:(.*)\r-Y:(.*)\rAX:(.*)\rAY:(.*)\r[(MX:)||(TP:)](.*)/g.exec(head)
@@ -227,8 +552,8 @@ export default {
       let color = 0
       let onestitle = []
       const stitchs = []
-      const canvasHeight = 145
-      const canvasWidht = 290
+      const canvasHeight = h
+      const canvasWidht = w
       const r = Math.min((canvasWidht - 20) / designInfo.width, (canvasHeight - 20) / designInfo.height)
       for (const i in stitchesData) {
         // console.log(stitchesData[i]);
@@ -261,18 +586,18 @@ export default {
       if (!canvas) return
       var context = canvas.getContext('2d')
       const colors = ['blue', 'red', 'black', 'yellow', 'purple', 'lime', 'navy', 'green', 'orange', 'brown']
-      const offsetx = designInfo.width * r < 290 ? (290 - designInfo.width * r) / 2 : 0
-      const offsety = designInfo.height * r < 145 ? (145 - designInfo.height * r) / 2 : 0
+      const offsetx = designInfo.width * r < w ? (w - designInfo.width * r) / 2 : 0
+      const offsety = designInfo.height * r < h ? (h - designInfo.height * r) / 2 : 0
       let x = designInfo.start.x * r + offsetx
       let y = designInfo.start.y * r + offsety
       const dpr = window.devicePixelRatio
       let nowcolor = -1
       let step = -1
-      canvas.width = 290
-      canvas.height = 145
+      canvas.width = w
+      canvas.height = h
       context.scale(dpr, dpr)
       context.translate(0.5, 0.5)
-      context.lineWidth = r
+      context.lineWidth = r * 3
       context.strokeStyle = colors[((nowcolor + 1 > 9) ? 0 : nowcolor + 1)]
       context.stroke()
       context.beginPath()
@@ -355,6 +680,13 @@ export default {
 </script>
 
 <style>
+  .el-drawer__body {
+    overflow:auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex: initial;
+  }
   .filter-item {margin-right: 5px;}
   .filter-container {
     display: flex;
@@ -364,14 +696,58 @@ export default {
   .filter-container > * {
     margin: 8px;
   }
+  .cctv,.info{
+    display: block;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    z-index: 1;
+  }
+  .updateBox:hover .cctv{
+    /* animation-duration: 3s; */
+    /* animation-name: shake; */
+    animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+  @keyframes shake {
+    0%{
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 50px, 0);
+  }
+}
+  .updateBox:hover .info{
+    /* animation-duration: 3s; */
+    /* animation-name: shake; */
+    animation: infoshake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+  @keyframes infoshake {
+    0%{
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 90px, 0);
+  }
+}
   .dstView {
-    height: 145px;
+    height: 185px;
     background: whitesmoke;
   }
-  .upload,.el-upload,.el-upload-dragger {
+  .upload,.el-upload,.el-upload-dragger ,#divPlugin{
         width: 300px;
-        height: 210px;
+        height: 185px;
         position: relative;
+  }
+  .design{
+    width: 120px;
+    height: 210px;
+    position: relative;
+    margin-left: 14px;
+  }
+  .design .dstView {
+    height: 110px;
+    width: 110px;
+    background: whitesmoke;
   }
   .el-upload-list {
     margin-top: 0;
@@ -384,8 +760,27 @@ export default {
     margin: 0;
     font-size: 48px;
   }
+  .designCheckboxGroup{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
   .updateBox {
-        position: relative
+    position: relative;
+    padding-bottom: 15px;
+  }
+  .updateBox.el-checkbox{
+    display: block;
+    margin-right: 0;
+    white-space: normal;
+  }
+  .updateBox .el-checkbox__label{
+    padding-left: 0
+  }
+  .updateBox .el-checkbox__input{
+    position: absolute;
+    top: 0;
+    left: 14px;
   }
   .patternAlert {
     position: absolute;
@@ -393,5 +788,20 @@ export default {
     left: 0;
     z-index: 1;
     width: 88%;
+  }
+  .design_text {
+    display: block;
+    color: #606266;
+    font-size: 14px;
+    text-align: center;
+    word-wrap: normal;
+    word-break: break-all;
+  }
+  .progress {
+    width: 88%;
+  }
+  .macid .el-badge__content.is-fixed{
+    top: 40px;
+    right: 38px;
   }
 </style>

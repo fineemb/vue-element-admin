@@ -10,6 +10,7 @@
       resizable
       keep-source
       size="small"
+      :cell-style="cellStyle"
       :print-config="{isMerge:true}"
       :loading="loading"
       :export-config="{}"
@@ -32,9 +33,12 @@
           <el-select v-model="listQuery.creator" clearable placeholder="选择员工" style="width: 110px;" class="filter-item" @change="handleFilter">
             <el-option v-for="item in users" :key="item.userId" :label="item.name" :value="item.name" />
           </el-select>
+          <el-select v-model="listQuery.shiftID" clearable placeholder="选择班次" style="width: 110px;" class="filter-item" @change="handleFilter">
+            <el-option v-for="item in [{shiftID:0,name:'夜班'},{shiftID:1,name:'白班'}]" :key="item.shiftID" :label="item.name" :value="item.shiftID" />
+          </el-select>
           <el-date-picker v-model="listQuery.date" class="filter-item" type="datetimerange" :picker-options="pickerOptions" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" align="right" @change="handleFilter" />
           <el-button v-waves class="filter-item" type="primary" icon="el-icon-refresh" @click="handleFilter" />
-          <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" disabled @click="handleCreate">
+          <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" @click="handleCreate">
             补记工资
           </el-button>
           <el-dropdown class="filter-item" split-button type="primary" @command="handleBatch">
@@ -61,6 +65,9 @@
           </el-dropdown>
           <el-button v-waves class="filter-item" type="primary" icon="el-icon-full-screen" @click="zoom" />
         </div>
+        <div class="filter-container">
+          <vxe-checkbox v-for="(column,index) in columns" :key="index" v-model="column.visible" @change="refreshColEvent">{{ column.title }}</vxe-checkbox>
+        </div>
       </template>
       <template #operate="{ row }">
         <vxe-button icon="fa fa-trash" title="删除" circle @click="removeRowEvent(row)" />
@@ -80,13 +87,14 @@
 
 <script>
 import { createArticle, updateArticle } from '@/api/article'
-import { getUserInfo, getData, upData, delData, getrOrders, updateIsSettled } from '@/api/user'
+import { getUserInfo, getData, upData, delData, updateIsSettled } from '@/api/user'
 import waves from '@/directive/waves' // waves directive
 import { parseTime } from '@/utils'
 import dateMethods from 'xe-utils/date'
 import * as Printjs from 'print-js'
 // arr to obj, such as { CN : "China", US : "USA" }// 打印样式
 const printStyle = `
+      table {font-size: 8px;}
       .title {
         text-align: center;
       }
@@ -136,6 +144,7 @@ export default {
       print: false,
       tableKey: 0,
       list: [],
+      columns: [],
       multipleSelection: [],
       total: 0,
       listLoading: true,
@@ -149,7 +158,11 @@ export default {
         creator: undefined,
         showSettled: false
       },
-      orders: [],
+      ColEvent: {
+        WV: true,
+        createTime: true,
+        machineMac: true
+      },
       users: [],
       tablePage: {
         total: 1,
@@ -169,24 +182,25 @@ export default {
         }
       },
       tableColumn: [
-        { type: 'checkbox', width: 50 },
-        { field: 'machineMac', title: '机器', width: 80, slots: { default: 'machine_default' }},
-        { field: 'userId', title: '员工', width: 80, slots: { default: 'user_default' }},
-        { field: 'shiftId', title: '班次', width: 80, editRender: { name: '$select', options: [{ label: '白班', value: 1 }, { label: '夜班', value: 0 }], props: { placeholder: '请选择班次' }}},
+        { type: 'checkbox', width: 40 },
+        { field: 'machineMac', title: '机器', width: 50, slots: { default: 'machine_default' }},
+        { field: 'userId', title: '员工', width: 70, slots: { default: 'user_default' }},
+        { field: 'shiftId', title: '班次', width: 70, editRender: { name: '$select', options: [{ label: '白班', value: 1 }, { label: '夜班', value: 0 }], props: { placeholder: '请选择班次' }}},
         { field: 'tapename', title: '文件名', width: 120 },
-        { field: 'stitches', title: '总针数', width: 100, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
-        { field: 'unitNum', title: '片数', width: 80, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
+        { field: 'stitches', title: '总针数', width: 90, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
+        { field: 'unitNum', title: '片数', width: 70, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
         { field: 'machinenum', title: '整车数', width: 80, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
         { title: '工资', children: [
-          { field: 'basepay', title: '基本', width: 80, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
-          { field: 'bonus', title: '改车', width: 80, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
-          { field: 'perk', title: '补贴', width: 80, editRender: { name: '$input', type: 'number', props: { type: 'number' }}}
+          { field: 'basepay', title: '基本', width: 70, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
+          // { field: 'applique', title: '贴布', width: 80, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
+          { field: 'bonus', title: '改车', width: 70, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
+          { field: 'perk', title: '补贴', width: 70, editRender: { name: '$input', type: 'number', props: { type: 'number' }}}
         ] },
-        { field: 'price', title: '元/千针', width: 80, editRender: { name: '$input', type: 'float', props: { type: 'float' }}},
-        { field: 'review_data.price4m', title: '元/车', width: 80, editRender: { name: '$input', type: 'float', props: { type: 'float', digits: 1 }}},
-        { field: 'starttime', title: '上班', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
-        { field: 'endtime', title: '下班', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
-        { field: 'createTime', title: '记录时间', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
+        { field: 'unitPrice', title: '元/千针', width: 90, editRender: { name: '$input', type: 'float', props: { type: 'float' }}},
+        { field: 'review_data.price4m', title: '元/车', width: 70, editRender: { name: '$input', type: 'float', props: { type: 'float', digits: 1 }}},
+        { field: 'createTime', title: '上班', width: 150, editRender: { name: '$input', props: { type: 'datetime' }}},
+        { field: 'endtime', title: '下班', width: 150, editRender: { name: '$input', props: { type: 'datetime' }}},
+        { field: 'createTime', title: '记录时间', width: 150, editRender: { name: '$input', props: { type: 'datetime' }}},
         { field: 'review_data.remark', title: '备注', editRender: { name: 'input' }}
       ],
 
@@ -351,9 +365,22 @@ export default {
   created() {
     this.getList()
     this.getUser()
-    this.getrOrders()
   },
   methods: {
+    refreshColEvent() {
+      const $table = this.$refs.xTable
+      if ($table) {
+        $table.refreshColumn()
+      }
+    },
+    cellStyle({ row, rowIndex, column }) {
+      if (row.isSettled) {
+        return {
+          backgroundColor: '#187',
+          color: '#ffffff'
+        }
+      }
+    },
     zoom(e) {
       this.$refs.xTable.zoom()
     },
@@ -364,33 +391,6 @@ export default {
       getUserInfo().then(response => {
         // console.log(response)
         this.users = response.data
-      })
-    },
-    getrOrders() {
-      getrOrders().then(response => {
-        console.log(response)
-        var data = response.data
-        for (var i = 0; i < data.length; i++) {
-          var order = data[i]
-          var item = {
-            value: order.orderID,
-            label: order.orderName + '(' + order.customername + ')',
-            children: []
-          }
-
-          var tapes = order.tapes
-          if (tapes) {
-            for (var t = 0; t < tapes.length; t++) {
-              var tape = tapes[t]
-              var titem = {
-                value: tape.filename,
-                label: tape.part + '(' + tape.filename + ')'
-              }
-              item.children.push(titem)
-            }
-          }
-          this.orders.push(item)
-        }
       })
     },
     handlePageChange({ currentPage, pageSize }) {
@@ -473,13 +473,15 @@ export default {
       const fileName = this.listQuery.filename ? 'tapename: /' + this.listQuery.filename + '/i,' : ''
       const machine = this.listQuery.machine ? 'machineMac: "' + this.listQuery.machine + '",' : ''
       const user = this.listQuery.creator ? 'creator: "' + this.listQuery.creator + '",' : ''
+      const showSettled = !this.listQuery.showSettled ? 'isSettled:_.exists(false).or(_.eq(false)),' : ''
+      const shiftID = this.listQuery.shiftID === '' || this.listQuery.shiftID === undefined ? '' : 'shiftId: ' + this.listQuery.shiftID + ','
       const date = this.listQuery.date ? 'endtime:' + '_.gt(' + Math.round(Date.parse(this.listQuery.date[0]) / 1000) + ').and(_.lt(' + Math.round(Date.parse(this.listQuery.date[1]) / 1000) + '))' + ',' : ''
       const s = {
         'collection': 'workdatas',
         'offset': (this.tablePage.currentPage - 1) * this.tablePage.pageSize,
         'limit': this.tablePage.pageSize,
-        'where': fileName + date + user + machine,
-        'orderBy': '"createTime", "desc"'
+        'where': fileName + date + user + machine + shiftID + showSettled,
+        'orderBy': '"endtime", "desc"'
       }
       getData(s).then(response => {
         const data = response.data.map(function(obj) {
@@ -488,17 +490,19 @@ export default {
           rObj['starttime'] = dateMethods.toDateString(obj.starttime * 1000)
           rObj['endtime'] = dateMethods.toDateString(obj.endtime * 1000)
           rObj['logTime'] = dateMethods.toDateString(obj.logTime * 1000)
+          rObj['basepay'] = Math.round(obj.basepay + (obj.applique ? obj.applique : 0))
           return rObj
         })
         this.list = data
         this.tablePage.total = response.pager.Total
         this.loading = false
+        this.columns = this.$refs.xTable.getColumns()
       })
     },
     sumNum(list, field) {
       let count = 0
       list.forEach(item => {
-        count += Number(item[field])
+        count += Number(item[field] ? item[field] : 0)
       })
       return count + '元'
     },
@@ -509,7 +513,7 @@ export default {
           if (columnIndex === 7) {
             return '合计'
           }
-          if (['basepay', 'bonus', 'perk'].includes(column.property)) {
+          if (['basepay', 'applique', 'bonus', 'perk'].includes(column.property)) {
             return this.sumNum(data, column.property)
           }
           return null
@@ -563,9 +567,12 @@ export default {
     },
     handleBatch(e) {
       console.log(e)
-      if (this.multipleSelection.length > 0 && e === 'isSettled') {
+      const $table = this.$refs.xTable
+      const checkboxRecords = $table.getCheckboxRecords()
+      if (checkboxRecords && checkboxRecords.length > 0 && e === 'isSettled') {
+        console.log(checkboxRecords)
         // 标记为已结算
-        updateIsSettled(this.multipleSelection).then(response => {
+        updateIsSettled(checkboxRecords).then(response => {
           console.log(response)
           this.getList()
           this.$message({
@@ -575,12 +582,17 @@ export default {
         })
       }
       if (e === 'print') {
-        // 标记为已结算
+        // 打印模式
         this.print = !this.print
       }
       if (e === 'settled') {
         // 标记为已结算
         this.listQuery.showSettled = !this.listQuery.showSettled
+        this.getList()
+      }
+      if (e === 'orderBy') {
+        // 排序
+        this.listQuery.orderBy === 'desc' ? this.listQuery.orderBy = 'asc' : this.listQuery.orderBy = 'desc'
         this.getList()
       }
     },
@@ -811,6 +823,10 @@ export default {
 }
 </script>
 <style>
+
+.vxe-toolbar.size--small {
+    height: auto;
+  }
   .filter-item {margin-right: 5px;}
   .el-table .isSettled {
     background: #f0f9eb;

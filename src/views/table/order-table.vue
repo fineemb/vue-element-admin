@@ -30,18 +30,17 @@
           </el-select>
           <el-button v-waves class="filter-item" type="primary" icon="el-icon-refresh" @click="handleFilter">刷新</el-button>
           <el-button v-waves class="filter-item" type="primary" icon="el-icon-full-screen" @click="zoom" />
+          <el-dropdown class="filter-item" split-button type="primary" @command="handleBatch">
+            显示
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="print">{{ print?'显示全部':'打印模式' }}</el-dropdown-item>
+              <el-dropdown-item command="disuse">{{ listQuery.disuse?'显示废弃订单':'隐藏废弃订单' }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </div>
       </template>
-      <template #operate="{ row }">
-        <el-popconfirm title="这条数据确定要删除吗？" @onConfirm="removeRowEvent(row)">
-          <vxe-button slot="reference" icon="el-icon-delete" title="删除" circle />
-        </el-popconfirm>
-      </template>
-      <template #duration_default="{ row }">
-        <span>{{ secondToDate(row.duration) }}</span>
-      </template>
-      <template #machine_default="{ row }">
-        <span>{{ machineFormat(row.mac) }}</span>
+      <template #disuse_default="{ row }">
+        <vxe-switch v-model="row.disuse" open-label="是" close-label="否" @change="handleSwitch" />
       </template>
     </vxe-grid>
   </div>
@@ -68,13 +67,15 @@ export default {
   data() {
     return {
       list: [],
+      print: false,
       total: 0,
       pageNum: 1,
       pageSize: 10,
       currentPage: 1,
       listQuery: {
         machine: undefined,
-        filename: undefined
+        filename: undefined,
+        disuse: false
       },
       tablePage: {
         total: 1,
@@ -95,10 +96,13 @@ export default {
         { field: 'customerID', title: '客户ID', width: 80 },
         { field: 'customername', title: '客户名', width: 120 },
         { field: 'orderID', title: '订单ID', width: 120 },
-        { field: 'orderName', title: '订单名', width: 150 },
+        { field: 'orderName', title: '订单名', width: 150, editRender: { name: 'input' }},
         { field: 'price', title: '单价', width: 100, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
         { field: 'price_s', title: '小码单价', width: 100, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
-        { field: 'createTime', title: '创建时间', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}}
+        { field: 'standard', title: '计量基准', width: 100, editRender: { name: '$select', options: [{ label: '被面', value: 'bm' }, { label: '小抱枕', value: 'xbz' }, { label: '边子', value: 'bz' }, { label: '方垫', value: 'fd' }, { label: '单人枕', value: 'drz' }], props: { placeholder: '选择部位' }}},
+        { field: 'createTime', title: '创建时间', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
+        { field: 'disuse', title: '废弃', width: 80, editRender: { name: '$select', options: [{ label: '废弃', value: true }, { label: '可用', value: false }], props: { placeholder: '状态' }}},
+        { field: 'remark', title: '备注', editRender: { name: 'input' }}
       ],
       machines: [{
         value: '1281909412AA',
@@ -173,6 +177,18 @@ export default {
       this.tablePage.pageSize = pageSize
       this.getList()
     },
+    handleBatch(e) {
+      console.log(e)
+      if (e === 'print') {
+        // 打印模式
+        this.print = !this.print
+      }
+      if (e === 'disuse') {
+        // 显示废弃订单
+        this.listQuery.disuse = !this.listQuery.disuse
+        this.getList()
+      }
+    },
     // 编辑实时更新数据
     editClosedEvent({ row, column }) {
       const $table = this.$refs.xTable
@@ -183,6 +199,7 @@ export default {
         const newRow = { ...row }
         newRow.createTime = Math.round(dateMethods.timestamp(newRow.createTime) / 1000)
         newRow.price = newRow.price * 1
+        newRow.price_s = newRow.price_s * 1
         delete newRow._XID
         delete newRow._X_ROW_KEY
         console.log('editClosedEvent', newRow)
@@ -201,11 +218,12 @@ export default {
       this.listQuery.offset = (this.tablePage.currentPage - 1) * this.tablePage.pageSize
       this.listQuery.limit = this.tablePage.pageSize
       const customerID = this.listQuery.customerID ? 'customerID: "' + this.listQuery.customerID + '",' : ''
+      const disuse = this.listQuery.disuse ? 'disuse: ' + !this.listQuery.disuse + ',' : ''
       const s = {
         'collection': 'orders',
         'offset': (this.tablePage.currentPage - 1) * this.tablePage.pageSize,
         'limit': this.tablePage.pageSize,
-        'where': customerID,
+        'where': customerID + disuse,
         'orderBy': '"createTime", "desc"'
       }
       getData(s).then(response => {
@@ -267,6 +285,10 @@ export default {
 }
 </script>
 <style>
+
+  .vxe-toolbar.size--small {
+      height: auto;
+    }
   .filter-item {margin-right: 5px;}
   .el-table .isSettled {
     background: #f0f9eb;

@@ -10,6 +10,9 @@
     <el-row style="background:#fff;padding:16px 16px 0;margin-bottom:32px;">
       <schedule-chart :ochart-data="OSChartData" height="500px" />
     </el-row>
+    <el-row style="background:#fff;padding:16px 16px 0;margin-bottom:32px;">
+      <state-chart :schart-data="StatesChartData" height="500px" />
+    </el-row>
     <el-row :gutter="32">
       <el-col :xs="24" :sm="24" :lg="8">
         <div class="chart-wrapper">
@@ -48,6 +51,7 @@ import GithubCorner from '@/components/GithubCorner'
 import PanelGroup from './components/PanelGroup'
 import LineChart from './components/LineChart'
 import ScheduleChart from './components/ScheduleChart'
+import StateChart from './components/StateChart'
 import RaddarChart from './components/RaddarChart'
 import PieChart from './components/PieChart'
 import BarChart from './components/BarChart'
@@ -62,6 +66,7 @@ export default {
     PanelGroup,
     LineChart,
     ScheduleChart,
+    StateChart,
     RaddarChart,
     PieChart,
     BarChart,
@@ -72,7 +77,8 @@ export default {
   data() {
     return {
       lineChartData: {},
-      OSChartData: {}
+      OSChartData: {},
+      StatesChartData: {}
     }
   },
   created() {
@@ -88,10 +94,19 @@ export default {
     })
   },
   beforeDestroy() {
-    eventBus.$off('message', this.message)
+    eventBus.$off()
   },
   methods: {
-    handleSetLineChartData(type) {
+    getYield() {
+      console.log('getYield')
+      eventBus.$emit('sendMsg', { 'cmd': 'getYield', data: {
+        format: '%Y-%m'
+      }})
+    },
+    getOS() {
+      eventBus.$emit('sendMsg', { 'cmd': 'getOS', data: {}})
+    },
+    handleSetLineChartData() {
       eventBus.$emit('sendMsg', { 'cmd': 'getYield', data: {
         format: '%Y-%m-%d'
       }})
@@ -107,6 +122,11 @@ export default {
       if (res.type === 'getOS') {
         this.OSChartData = res.data
         console.log('OSChartData', res)
+      }
+
+      if (res.type === 'getStates') {
+        this.StatesChartData = res.data
+        console.log('StatesChartData', res)
       }
     }
   }

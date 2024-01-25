@@ -61,6 +61,11 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '/authredirect',
+    component: () => import('@/views/auth/redirect'),
+    hidden: true
+  },
+  {
     path: '/404',
     component: () => import('@/views/error-page/404'),
     hidden: true
@@ -79,7 +84,7 @@ export const constantRoutes = [
         path: 'dashboard',
         component: () => import('@/views/dashboard/index'),
         name: 'Dashboard',
-        meta: { title: '综合看板', icon: 'dashboard', affix: true }
+        meta: { title: '综合看板', icon: 'dashboard', affix: true, noCache: true }
       }
     ]
   },
@@ -91,7 +96,7 @@ export const constantRoutes = [
         path: 'index',
         component: () => import('@/views/pattern/updata-pattern'),
         name: 'UpdataPattern',
-        meta: { title: '版带分发', icon: 'el-icon-upload', affix: false, noCache: false }
+        meta: { title: '版带分发', icon: 'el-icon-upload', affix: false, noCache: true }
       }
     ]
   },
@@ -164,6 +169,30 @@ export const constantRoutes = [
         component: () => import('@/views/table/schedule'),
         name: 'Schedule',
         meta: { title: '生产进度', icon: 'el-icon-s-data', affix: false, noCache: false }
+      }
+    ]
+  },
+  {
+    path: '/output-value-table',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/table/output-value-table'),
+        name: 'output-value-table',
+        meta: { title: '产值统计', icon: 'el-icon-s-operation', affix: false, noCache: false }
+      }
+    ]
+  },
+  {
+    path: '/process-sheet',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/pattern/process-sheet'),
+        name: 'process-sheet',
+        meta: { title: '绘制工艺单', icon: 'tab', affix: false, noCache: false }
       }
     ]
   },

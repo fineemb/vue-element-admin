@@ -28,17 +28,20 @@
         <div class="filter-container">
           <el-input v-model="listQuery.filename" placeholder="花样名称" style="width: 110px;" class="filter-item" clearable @keyup.enter.native="handleFilter" />
           <!-- <el-cascader v-model="listQuery.filename" class="filter-item" placeholder="订单选择" :options="orders" :props="{ expandTrigger: 'hover' }" filterable allow-create default-first-option clearable @change="handleFilter" /> -->
-          <el-select v-model="listQuery.machine" clearable placeholder="选择机器" class="filter-item" @change="handleFilter">
+          <el-select v-model="listQuery.machine" style="width: 120px;" clearable placeholder="选择机器" class="filter-item" @change="handleFilter">
             <el-option v-for="item in machines" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
-          <el-select v-model="listQuery.userId" clearable placeholder="选择员工" class="filter-item" @change="handleFilter">
+          <el-select v-model="listQuery.userId" style="width: 120px;" clearable placeholder="选择员工" class="filter-item" @change="handleFilter">
             <el-option v-for="item in users" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
-          <el-select v-model="listQuery.reason" multiple clearable placeholder="选择事件" class="filter-item" @change="handleFilter">
+          <el-select v-model="listQuery.reason" style="width: 120px;" multiple clearable placeholder="选择事件" class="filter-item" @change="handleFilter">
             <el-option v-for="item in reasons" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
-          <el-date-picker v-model="listQuery.date" class="filter-item" type="datetimerange" :picker-options="pickerOptions" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" align="right" @change="handleFilter" />
+          <el-date-picker v-model="listQuery.date" style="width: 380px;" class="filter-item" type="datetimerange" :picker-options="pickerOptions" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" align="right" @change="handleFilter" />
           <el-button v-waves class="filter-item" type="primary" icon="el-icon-refresh" @click="handleFilter" />
+          <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-download" @click="reData">
+            抓取数据
+          </el-button>
           <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" @click="handleCreate">
             添加事件
           </el-button>
@@ -60,15 +63,42 @@
       <template #duration_default="{ row }">
         <span>{{ secondToDate(row.duration) }}</span>
       </template>
+      <template #exact_duration_default="{ row }">
+        <span>{{ secondToDate(row.exact_duration) }}</span>
+      </template>
+      <template #whole_duration_default="{ row }">
+        <span>{{ secondToDate(row.whole_duration) }}</span>
+      </template>
       <template #reason_default="{ row }">
         <span>{{ reasonFormat(row) }}</span>
       </template>
     </vxe-grid>
+    <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
+      <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
+        <el-form-item label="时间范围" prop="timestamp">
+          <!-- <el-date-picker v-model="temp.timestamp" type="datetime" placeholder="Please pick a date" /> -->
+          <el-date-picker v-model="temp.date" class="filter-item" type="datetimerange" :picker-options="pickerOptions" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" align="right" @change="handleFilter" />
+        </el-form-item>
+        <el-form-item label="机台">
+          <el-select v-model="temp.machine" class="filter-item" placeholder="选择机器">
+            <el-option v-for="item in machines" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">
+          取消
+        </el-button>
+        <el-button type="primary" @click="getDHData">
+          确认
+        </el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getUserInfo, addYield, getData, upData, delData, getrOrders } from '@/api/user'
+import { getUserInfo, addYield, getData, upData, delData, reDHData } from '@/api/user'
 import waves from '@/directive/waves' // waves directive
 import dateMethods from 'xe-utils/date'
 // arr to obj, such as { CN : "China", US : "USA" }
@@ -142,6 +172,7 @@ export default {
   },
   data() {
     return {
+      dialogFormVisible: false,
       showEdit: [],
       showBtn: [],
       showBtnOrdinary: true,
@@ -177,15 +208,17 @@ export default {
         { field: 'mac', title: '机器', width: 80 },
         { field: 'userId', title: '员工', width: 80, editRender: {}},
         { field: 'shiftId', title: '班次', width: 80, editRender: { name: '$select', options: [{ label: '白班', value: 1 }, { label: '夜班', value: 0 }], props: { placeholder: '请选择班次' }}},
-        { field: 'logTime', title: '登录时间', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
+        { field: 'logTime', title: '登录时间', width: 170, editRender: { name: '$input', props: { type: 'datetime' }}},
         { field: 'patternName', title: '文件名', width: 120, editRender: { name: 'input' }},
-        { field: 'countNum', title: '完成针数', width: 100, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
         { field: 'runHeads', title: '片数', width: 80, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
+        { field: 'countNum', title: '针数', width: 80, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
         { field: 'reason', title: '事件', slots: { default: 'reason_default' }, width: 100 },
-        { field: 'start', title: '开始时间', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
-        { field: 'end', title: '完成时间', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
-        { field: 'duration', title: '持续时间', width: 150, slots: { default: 'duration_default' }},
-        { field: 'createTime', title: '记录时间', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
+        { field: 'start', title: '开始时间', width: 170, editRender: { name: '$input', props: { type: 'datetime' }}},
+        { field: 'end', title: '完成时间', width: 170, editRender: { name: '$input', props: { type: 'datetime' }}},
+        { field: 'duration', title: '完成耗时', width: 110, slots: { default: 'duration_default' }},
+        { field: 'duration', title: '运作时间', width: 110, slots: { default: 'exact_duration_default' }},
+        { field: 'duration', title: '总耗时', width: 110, slots: { default: 'whole_duration_default' }},
+        { field: 'createTime', title: '记录时间', width: 170, editRender: { name: '$input', props: { type: 'datetime' }}},
         { title: '操作', slots: { default: 'operate' }}
       ],
       editRules: {
@@ -202,7 +235,6 @@ export default {
           { required: true, message: '必须选择事件' }
         ]
       },
-      orders: [],
       users: [],
       reasons: [{
         'value': 1,
@@ -335,13 +367,9 @@ export default {
         }]
       },
       temp: {
-        mac: '',
-        datetime: new Date(),
-        userId: '',
-        shiftId: '',
-        operateType: 2
+        date: [],
+        machine: ''
       },
-      dialogFormVisible: false,
       dialogStatus: '',
       textMap: {
         update: 'Edit',
@@ -360,9 +388,37 @@ export default {
   created() {
     this.getList()
     this.getUser()
-    this.getrOrders()
+    // this.getrOrders()
   },
   methods: {
+    reData(e) {
+      this.resetTemp()
+      this.dialogFormVisible = true
+      this.$nextTick(() => {
+        this.$refs['dataForm'].clearValidate()
+      })
+    },
+    getDHData() {
+      var that = this
+      this.$refs['dataForm'].validate((valid) => {
+        if (valid) {
+          console.log(valid, this.temp)
+          var data = {
+            date: [dateMethods.toDateString(this.temp.date[0], 'yyyy-MM-dd HH:mm:ss'), dateMethods.toDateString(this.temp.date[1], 'yyyy-MM-dd HH:mm:ss')],
+            machine: this.temp.machine
+          }
+          reDHData(data).then(() => {
+            that.dialogFormVisible = false
+            that.$notify({
+              title: 'Success',
+              message: '抓取数据成功',
+              type: 'success',
+              duration: 2000
+            })
+          })
+        }
+      })
+    },
     zoom(e) {
       this.$refs.xTable.zoom()
     },
@@ -393,33 +449,6 @@ export default {
         this.$set(this.tableColumn, 1, { field: 'mac', title: '机器', width: 80, editRender: { name: '$select', options: this.machines, props: { placeholder: '请选择机器' }}})
         this.$set(this.tableColumn, 8, { field: 'reason', title: '事件', width: 80, editRender: { name: '$select', options: this.reasons, props: { placeholder: '请选择事件' }}, slots: { default: 'reason_default' }})
         this.$set(this.tableColumn, 2, { field: 'userId', title: '员工', width: 80, editRender: { name: '$select', options: this.users, props: { placeholder: '请选择员工' }}})
-      })
-    },
-    getrOrders() {
-      getrOrders().then(response => {
-        console.log(response)
-        var data = response.data
-        for (var i = 0; i < data.length; i++) {
-          var order = data[i]
-          var item = {
-            value: order.orderID,
-            label: order.orderName + '(' + order.customername + ')',
-            children: []
-          }
-
-          var tapes = order.tapes
-          if (tapes) {
-            for (var t = 0; t < tapes.length; t++) {
-              var tape = tapes[t]
-              var titem = {
-                value: tape.filename,
-                label: tape.part + '(' + tape.filename + ')'
-              }
-              item.children.push(titem)
-            }
-          }
-          this.orders.push(item)
-        }
       })
     },
     handlePageChange({ currentPage, pageSize }) {
@@ -460,7 +489,7 @@ export default {
       })
     },
     // 编辑实时更新数据
-    editClosedEvent({ row, column }) {
+    async editClosedEvent({ row, column }) {
       const $table = this.$refs.xTable
       const field = column.property
       const cellValue = row[field]
@@ -474,6 +503,20 @@ export default {
         newRow.runHeads = newRow.runHeads * 1
         newRow.countNum = newRow.countNum * 1
         newRow.userId = newRow.userId * 1
+        if (newRow.reason === 8) {
+          const confrmRes = await this.$confirm('选择上下班', '提示', {
+            distinguishCancelAndClose: true,
+            confirmButtonText: '下班',
+            cancelButtonText: '上班',
+            type: 'warning'
+          }
+          ).catch(err => console.log(err))
+          if (confrmRes === 'confirm') {
+            newRow.operateType = 1
+          } else {
+            newRow.operateType = 0
+          }
+        }
         delete newRow._XID
         delete newRow._X_ROW_KEY
         console.log('editClosedEvent', newRow)
@@ -537,11 +580,8 @@ export default {
     },
     resetTemp() {
       this.temp = {
-        mac: '',
-        datetime: new Date(),
-        userId: '',
-        shiftId: '',
-        operateType: 2
+        date: [],
+        machine: ''
       }
     },
     handleCreate() {
@@ -564,12 +604,6 @@ export default {
         'user': '',
         'userId': null
       })
-      // this.resetTemp()
-      // this.dialogStatus = 'create'
-      // this.dialogFormVisible = true
-      // this.$nextTick(() => {
-      //   this.$refs['dataForm'].clearValidate()
-      // })
     },
     createData(data) {
       const that = this
@@ -655,5 +689,9 @@ export default {
 }
 </script>
 <style>
+
+.vxe-toolbar.size--small {
+    height: auto;
+  }
   .filter-item {margin-right: 5px;}
 </style>

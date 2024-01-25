@@ -1,9 +1,10 @@
 import { login, logout, getInfo } from '@/api/user'
-import { getToken, setToken, removeToken } from '@/utils/auth'
+import { getToken, setToken, removeToken, setOpenID, removeOpenID, getOpenID } from '@/utils/auth'
 import router, { resetRouter } from '@/router'
 
 const state = {
   token: getToken(),
+  openid: getOpenID(),
   name: '',
   avatar: '',
   introduction: '',
@@ -13,6 +14,9 @@ const state = {
 const mutations = {
   SET_TOKEN: (state, token) => {
     state.token = token
+  },
+  SET_OPENID: (state, openid) => {
+    state.openid = openid
   },
   SET_INTRODUCTION: (state, introduction) => {
     state.introduction = introduction
@@ -44,12 +48,28 @@ const actions = {
     })
   },
 
+  // user login
+  LoginByThirdparty({ commit }, code) {
+    return new Promise((resolve, reject) => {
+      login({ code: code }).then(response => {
+        const { data } = response
+        commit('SET_TOKEN', data.access_token)
+        commit('SET_OPENID', data.openid)
+        setToken(data.access_token)
+        setOpenID(data.openid)
+        resolve()
+      }).catch(error => {
+        reject(error)
+      })
+    })
+  },
+
   // get user info
   getInfo({ commit, state }) {
     return new Promise((resolve, reject) => {
-      getInfo(state.token).then(response => {
+      getInfo({ token: state.token, openid: state.openid }).then(response => {
         const { data } = response
-
+        console.log(response)
         if (!data) {
           reject('Verification failed, please Login again.')
         }
@@ -105,8 +125,10 @@ const actions = {
     return new Promise((resolve, reject) => {
       logout(state.token).then(() => {
         commit('SET_TOKEN', '')
+        commit('SET_OPENID', '')
         commit('SET_ROLES', [])
         removeToken()
+        removeOpenID()
         resetRouter()
 
         // reset visited views and cached views
@@ -124,8 +146,10 @@ const actions = {
   resetToken({ commit }) {
     return new Promise(resolve => {
       commit('SET_TOKEN', '')
+      commit('SET_OPENID', '')
       commit('SET_ROLES', [])
       removeToken()
+      removeOpenID()
       resolve()
     })
   },

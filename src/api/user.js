@@ -7,11 +7,11 @@ export function login(data) {
     data
   })
 }
-export function getInfo(token) {
+export function getInfo(params) {
   return request({
     url: '/user/info',
     method: 'get',
-    params: { token }
+    params: params
   })
 }
 export function logout() {
@@ -24,6 +24,19 @@ export function getUserInfo() {
   return request({
     url: '/userinfo',
     method: 'get'
+  })
+}
+export function getTask() {
+  return request({
+    url: '/task',
+    method: 'get'
+  })
+}
+export function reTask(data) {
+  return request({
+    url: '/retask',
+    method: 'post',
+    data
   })
 }
 export function getData(data) {
@@ -65,7 +78,8 @@ export function getSchedule(data) {
 export function getrOrders(data) {
   return request({
     url: '/getrorders',
-    method: 'get'
+    method: 'post',
+    data
   })
 }
 export function getIOlist(data) {
@@ -110,3 +124,34 @@ export function updateIsSettled(data) {
     data
   })
 }
+export function outputValue(data) {
+  return request({
+    url: '/outputvalue',
+    method: 'post',
+    data
+  })
+}
+export function reDHData(data) {
+  return request({
+    url: '/redhdata',
+    method: 'post',
+    data
+  })
+}
+export function getDesigns(data) {
+  return request({
+    url: '/getdesigns',
+    method: 'post',
+    timeout: 15000,
+    data
+  })
+}
+export function delDesigns(data) {
+  return request({
+    url: '/deldesigns',
+    method: 'post',
+    timeout: 15000,
+    data
+  })
+}
+

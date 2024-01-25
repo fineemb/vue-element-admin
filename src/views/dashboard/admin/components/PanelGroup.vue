@@ -78,6 +78,7 @@ export default {
   },
   methods: {
     handleSetLineChartData(type) {
+      console.log(type)
       this.$emit('handleSetLineChartData', type)
     },
     message(value) {
