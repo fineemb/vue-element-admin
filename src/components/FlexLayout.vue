@@ -1,32 +1,32 @@
 <script setup>
-import {computed} from "vue";
+import { computed } from 'vue'
 
 const props = defineProps({
-	direction: {
-		type: String,
-		default: "",
-	},
-	height: {
-		type: String,
-		default: "100%",
-	},
-	noBg: {
-		type: Boolean,
-		default: false,
-	},
-	loading: {
-		type: Boolean,
-		default: false,
-	},
-	bgImg: {
-		type: Boolean,
-		default: false
-	},
-	xNoHidden: {
-		type: Boolean,
-		default: false
-	}
-});
+  direction: {
+    type: String,
+    default: ''
+  },
+  height: {
+    type: String,
+    default: '100%'
+  },
+  noBg: {
+    type: Boolean,
+    default: false
+  },
+  loading: {
+    type: Boolean,
+    default: false
+  },
+  bgImg: {
+    type: Boolean,
+    default: false
+  },
+  xNoHidden: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const svg = `
         <path class="path" d="
@@ -39,39 +39,40 @@ const svg = `
         " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0)"/>
       `
 
-const getRootClass = computed(()=>{
-	return {
-		"direction-row": props.direction === "row",
-		"bg-img": props.bgImg
-	};
-});
+const getRootClass = computed(() => {
+  return {
+    'direction-row': props.direction === 'row',
+    'bg-img': props.bgImg
+  }
+})
 
-const getRootStyle = computed(()=>{
-	return {
-		height: props.height,
-	};
-});
+const getRootStyle = computed(() => {
+  return {
+    height: props.height
+  }
+})
 </script>
 
 <template>
-	<div
-		class="flex-layout"
-		:class="getRootClass"
-		:style="getRootStyle"
-		v-loading="loading"
-		element-loading-text="拼命加载中"
-		:element-loading-spinner="svg"
-		element-loading-background="rgba(0, 0, 0, 0.2)">
-		<div class="flex-layout-header">
-			<slot name="header"></slot>
-		</div>
-		<div class="flex-layout-body" :class="{ 'no-bg': noBg, 'x-no-hidden': xNoHidden }">
-			<slot></slot>
-		</div>
-		<div class="flex-layout-footer">
-			<slot name="footer"></slot>
-		</div>
-	</div>
+  <div
+    v-loading="loading"
+    class="flex-layout"
+    :class="getRootClass"
+    :style="getRootStyle"
+    element-loading-text="拼命加载中"
+    :element-loading-spinner="svg"
+    element-loading-background="rgba(0, 0, 0, 0.2)"
+  >
+    <div class="flex-layout-header">
+      <slot name="header" />
+    </div>
+    <div class="flex-layout-body" :class="{ 'no-bg': noBg, 'x-no-hidden': xNoHidden }">
+      <slot />
+    </div>
+    <div class="flex-layout-footer">
+      <slot name="footer" />
+    </div>
+  </div>
 </template>
 
 <style scoped>

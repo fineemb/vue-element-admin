@@ -1,50 +1,50 @@
 <script setup>
-import {computed, onMounted, onUnmounted, ref, watch} from "vue";
-import hkModule from "@/views/video/components/js/hkVideo/hkModule";
-import FlexLayout from "@/components/FlexLayout.vue";
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import hkModule from '@/views/video/components/js/hkVideo/hkModule'
+import FlexLayout from '@/components/FlexLayout.vue'
 const props = defineProps({
-	companyVideoData: {
-		type: Object,
-		default() {
-			return [];
-		},
-	},
-});
+  companyVideoData: {
+    type: Object,
+    default() {
+      return []
+    }
+  }
+})
 
 // 海康威视模块
 const {
-	divPlugin, iWndowType, gIWndIndex,
-	videoInitPlugin, clickLogin
-} = hkModule();
+  divPlugin, iWndowType, gIWndIndex,
+  videoInitPlugin, clickLogin
+} = hkModule()
 
-const clickLogins = ()=>{
-	for(let i=0; i<props.companyVideoData.length; i++) {
-		let item = props.companyVideoData[i];
-		setTimeout(()=>{
-			clickLogin(item, i);
-		}, 1000);
-	}
+const clickLogins = () => {
+  for (let i = 0; i < props.companyVideoData.length; i++) {
+    const item = props.companyVideoData[i]
+    setTimeout(() => {
+      clickLogin(item, i)
+    }, 1000)
+  }
 }
 
-onMounted(()=>{
-	videoInitPlugin(()=>{
-		clickLogins();
-	});
-});
+onMounted(() => {
+  videoInitPlugin(() => {
+    clickLogins()
+  })
+})
 
-onUnmounted(()=>{
-	for(let i=0; i<props.companyVideoData.length; i++) {
-		let item = props.companyVideoData[i];
-		WebVideoCtrl.I_Logout(item.ip);
-	}
-	WebVideoCtrl.I_GetPluginOBJECT().JS_DestroyPlugin();
-});
+onUnmounted(() => {
+  for (let i = 0; i < props.companyVideoData.length; i++) {
+    const item = props.companyVideoData[i]
+    WebVideoCtrl.I_Logout(item.ip)
+  }
+  WebVideoCtrl.I_GetPluginOBJECT().JS_DestroyPlugin()
+})
 </script>
 
 <template>
-		<div class="video-player">
-			<div id="divPlugin" class="divPlugin" ref="divPlugin"></div>
-		</div>
+  <div class="video-player">
+    <div id="divPlugin" ref="divPlugin" class="divPlugin" />
+  </div>
 </template>
 
 <style scoped>
