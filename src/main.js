@@ -26,8 +26,10 @@ import * as filters from './filters' // global filters
 import 'xe-utils'
 // import XEUtils from 'xe-utils'
 import VXETable from 'vxe-table'
+import VXETablePluginMenus from 'vxe-table-plugin-menus'
 import 'vxe-table/lib/style.css'
 Vue.use(VXETable)
+VXETable.use(VXETablePluginMenus)
 // Vue.use(XEUtils)
 
 VXETable.formats.add('dateFormat', ({ cellValue }) => {

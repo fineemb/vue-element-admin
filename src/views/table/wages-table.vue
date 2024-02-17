@@ -10,6 +10,7 @@
       resizable
       keep-source
       size="small"
+      :context-menu="{body: {options: bodyMenus}}"
       :cell-style="cellStyle"
       :print-config="{isMerge:true}"
       :loading="loading"
@@ -138,6 +139,8 @@ export default {
   },
   data() {
     return {
+      ds: 0,
+      ns: 0,
       showEdit: [],
       showBtn: [],
       showBtnOrdinary: true,
@@ -164,6 +167,31 @@ export default {
         machineMac: true
       },
       users: [],
+      bodyMenus: [
+        [
+          { code: 'INSERT_AT_ROW', name: '新增行' },
+          { code: 'DELETE_ROW', name: '删除行' },
+          { code: 'EDIT_CELL', name: '编辑' },
+          { code: 'REVERT_CELL', name: '还原值', prefixIcon: 'vxe-icon-repeat' }
+        ],
+        [
+          { code: 'CLEAR_FILTER', name: '清除筛选' },
+          { code: 'CLEAR_ALL_FILTER', name: '清除所有筛选' },
+          {
+            name: '排序',
+            children: [
+              { code: 'CLEAR_SORT', name: '清除排序' },
+              { code: 'SORT_ASC', name: '升序', prefixIcon: 'vxe-icon-sort-alpha-asc' },
+              { code: 'SORT_DESC', name: '倒序', prefixIcon: 'vxe-icon-sort-alpha-desc' }
+            ]
+          }
+        ],
+        // 引入 vxe-table-plugin-menus 之后可以直接使用以下内置 code，使用最简单
+        [
+          { code: 'PRINT_ALL', name: '打印', prefixIcon: 'vxe-icon-print', params: { columns: ['machineMac', 'shiftId', 'tapename', 'stitches', 'machinenum', 'basepay', 'bonus', 'perk', 'unitPrice', 'review_data.price4m', 'endtime', 'review_data.remark'] }},
+          { code: 'EXPORT_ALL', name: '导出 CSV', prefixIcon: 'vxe-icon-download', params: { filename: '导出数据', type: 'csv' }}
+        ]
+      ],
       tablePage: {
         total: 1,
         currentPage: 1,
@@ -186,20 +214,20 @@ export default {
         { field: 'machineMac', title: '机器', width: 50, slots: { default: 'machine_default' }},
         { field: 'userId', title: '员工', width: 70, slots: { default: 'user_default' }},
         { field: 'shiftId', title: '班次', width: 70, editRender: { name: '$select', options: [{ label: '白班', value: 1 }, { label: '夜班', value: 0 }], props: { placeholder: '请选择班次' }}},
-        { field: 'tapename', title: '文件名', width: 120 },
+        { field: 'tapename', title: '文件名', width: 200 },
         { field: 'stitches', title: '总针数', width: 90, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
         { field: 'unitNum', title: '片数', width: 70, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
-        { field: 'machinenum', title: '整车数', width: 80, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
+        { field: 'machinenum', title: '车数', width: 70, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
         { title: '工资', children: [
           { field: 'basepay', title: '基本', width: 70, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
           // { field: 'applique', title: '贴布', width: 80, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
           { field: 'bonus', title: '改车', width: 70, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
           { field: 'perk', title: '补贴', width: 70, editRender: { name: '$input', type: 'number', props: { type: 'number' }}}
         ] },
-        { field: 'unitPrice', title: '元/千针', width: 90, editRender: { name: '$input', type: 'float', props: { type: 'float' }}},
-        { field: 'review_data.price4m', title: '元/车', width: 70, editRender: { name: '$input', type: 'float', props: { type: 'float', digits: 1 }}},
+        { field: 'unitPrice', title: '元/千针', width: 80, editRender: { name: '$input', type: 'float', props: { type: 'float' }}},
+        { field: 'review_data.price4m', title: '元/车', width: 80, editRender: { name: '$input', type: 'float', props: { type: 'float', digits: 1 }}},
         { field: 'createTime', title: '上班', width: 150, editRender: { name: '$input', props: { type: 'datetime' }}},
-        { field: 'endtime', title: '下班', width: 150, editRender: { name: '$input', props: { type: 'datetime' }}},
+        { field: 'endtime', title: '下班', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
         { field: 'createTime', title: '记录时间', width: 150, editRender: { name: '$input', props: { type: 'datetime' }}},
         { field: 'review_data.remark', title: '备注', editRender: { name: 'input' }}
       ],
@@ -411,7 +439,7 @@ export default {
       <div class="my-top">
         <div class="my-list-row">
           <div class="my-list-col">员工：` + [...new Set(this.list.map(a => a.creator))].join(',') + `</div>
-          <div class="my-list-col">班次：` + [...new Set(this.list.map(a => a.shiftId))].join(',') + `</div>
+          <div class="my-list-col">班次：白班(` + this.ds + ')  夜班(' + this.ns + `)</div>
           <div class="my-list-col">机台：` + [...new Set(this.list.map(a => a.machineID))].join(',') + `</div>
         </div>
       </div>
@@ -467,6 +495,8 @@ export default {
       }
     },
     getList() {
+      this.ds = 0
+      this.ns = 0
       this.loading = true
       this.listQuery.offset = (this.tablePage.currentPage - 1) * this.tablePage.pageSize
       this.listQuery.limit = this.tablePage.pageSize
@@ -490,7 +520,8 @@ export default {
           rObj['starttime'] = dateMethods.toDateString(obj.starttime * 1000)
           rObj['endtime'] = dateMethods.toDateString(obj.endtime * 1000)
           rObj['logTime'] = dateMethods.toDateString(obj.logTime * 1000)
-          rObj['basepay'] = Math.round(obj.basepay + (obj.applique ? obj.applique : 0))
+          rObj['basepay'] = Math.round(obj.basepay)
+          rObj['perk'] = Math.round(obj.perk + (obj.applique ? obj.applique : 0))
           return rObj
         })
         this.list = data
@@ -508,9 +539,18 @@ export default {
     },
     footerMethod({ columns, data }) {
       console.log(data, columns)
+      const days = []
+      const night = []
+      const d = dateMethods
+      for (var i = 0; i < data.length; i++) {
+        if (data[i].shiftId === 1) days.push(d.toDateString(data[i].endtime, 'yyyyMMdd'))
+        if (data[i].shiftId === 0) night.push(d.toDateString(data[i].endtime, 'yyyyMMdd'))
+      }
+      this.ds = [...new Set(days)].length
+      this.ns = [...new Set(night)].length
       return [
         columns.map((column, columnIndex) => {
-          if (columnIndex === 7) {
+          if (column.field === 'machinenum') {
             return '合计'
           }
           if (['basepay', 'applique', 'bonus', 'perk'].includes(column.property)) {
@@ -519,10 +559,10 @@ export default {
           return null
         }),
         columns.map((column, columnIndex) => {
-          if (columnIndex === 7) {
+          if (column.field === 'machinenum') {
             return '总计'
           }
-          if (columnIndex === 8) {
+          if (column.field === 'basepay') {
             let count = 0
             data.forEach(row => {
               count += row.basepay * 1

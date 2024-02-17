@@ -42,12 +42,17 @@
       <template #disuse_default="{ row }">
         <vxe-switch v-model="row.disuse" open-label="是" close-label="否" @change="handleSwitch" />
       </template>
+      <template v-slot:files_default="{ row, column }">
+        <span>
+          <el-button v-if="row.fileUrls && row.fileUrls.length>0" :data-url="row.fileUrls?row.fileUrls[row.fileUrls.length-1]:''" type="primary" plain icon="el-icon-picture" circle @click.native="handleShowPic(column,row)" />
+        </span>
+      </template>
     </vxe-grid>
   </div>
 </template>
 
 <script>
-import { getData, upData, delData } from '@/api/user'
+import { getData, upData, getDownloadUrl, delData } from '@/api/user'
 import waves from '@/directive/waves' // waves directive
 import dateMethods from 'xe-utils/date'
 // arr to obj, such as { CN : "China", US : "USA" }// 打印样式
@@ -100,6 +105,7 @@ export default {
         { field: 'price', title: '单价', width: 100, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
         { field: 'price_s', title: '小码单价', width: 100, editRender: { name: '$input', type: 'number', props: { type: 'number' }}},
         { field: 'standard', title: '计量基准', width: 100, editRender: { name: '$select', options: [{ label: '被面', value: 'bm' }, { label: '小抱枕', value: 'xbz' }, { label: '边子', value: 'bz' }, { label: '方垫', value: 'fd' }, { label: '单人枕', value: 'drz' }], props: { placeholder: '选择部位' }}},
+        { field: 'files', title: '图片', slots: { default: 'files_default' }, width: 60 },
         { field: 'createTime', title: '创建时间', width: 200, editRender: { name: '$input', props: { type: 'datetime' }}},
         { field: 'disuse', title: '废弃', width: 80, editRender: { name: '$select', options: [{ label: '废弃', value: true }, { label: '可用', value: false }], props: { placeholder: '状态' }}},
         { field: 'remark', title: '备注', editRender: { name: 'input' }}
@@ -257,6 +263,20 @@ export default {
       this.temp = {
         machine: ''
       }
+    },
+    handleShowPic(index, row) {
+      console.log(index, row)
+      const file = row.fileIDs[row.fileIDs.length - 1]
+      getDownloadUrl({ fileid: file }).then(response => {
+        console.log(response)
+        this.$notify({
+          title: '底单查看',
+          dangerouslyUseHTMLString: true,
+          duration: 0,
+          message: `<image style="max-width: 550px; height: 900px;object-fit: scale-down;"
+                  src="` + response.file_list[0].download_url + `"></image>`
+        })
+      })
     },
     handleCreate() {
       this.resetTemp()

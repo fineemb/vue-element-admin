@@ -10,6 +10,7 @@
       resizable
       keep-source
       size="small"
+      :context-menu="{body: {options: bodyMenus}}"
       :edit-rules="editRules"
       :print-config="{}"
       :loading="loading"
@@ -23,6 +24,7 @@
       :toolbar-config="toolbarConfig"
       @edit-closed="editClosedEvent"
       @page-change="handlePageChange"
+      @context-menu-click="contextMenuClickEvent"
     >
       <template #toolbar_buttons>
         <div class="filter-container">
@@ -41,9 +43,6 @@
           <el-button v-waves class="filter-item" type="primary" icon="el-icon-refresh" @click="handleFilter" />
           <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-download" @click="reData">
             抓取数据
-          </el-button>
-          <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" @click="handleCreate">
-            添加事件
           </el-button>
           <el-dropdown class="filter-item" split-button type="primary" @command="printAndExport">
             导出与打印
@@ -189,6 +188,24 @@ export default {
         date: undefined,
         userId: undefined
       },
+      bodyMenus: [
+        [
+          { code: 'INSERT_AT_ROW_s', name: '新增数据' },
+          { code: 'REVERT_CELL', name: '还原值', prefixIcon: 'vxe-icon-repeat' }
+        ],
+        [
+          { code: 'CLEAR_FILTER', name: '清除筛选' },
+          { code: 'CLEAR_ALL_FILTER', name: '清除所有筛选' },
+          {
+            name: '排序',
+            children: [
+              { code: 'CLEAR_SORT', name: '清除排序' },
+              { code: 'SORT_ASC', name: '升序', prefixIcon: 'vxe-icon-sort-alpha-asc' },
+              { code: 'SORT_DESC', name: '倒序', prefixIcon: 'vxe-icon-sort-alpha-desc' }
+            ]
+          }
+        ]
+      ],
       tablePage: {
         total: 1,
         currentPage: 1,
@@ -584,26 +601,27 @@ export default {
         machine: ''
       }
     },
-    handleCreate() {
+    handleCreate(row) {
+      // console.log(e)
       const $grid = this.$refs.xTable
-      $grid.insert({
+      $grid.insertAt({
         '_id': null,
         'countNum': 0,
         'createTime': dateMethods.toDateString(new Date()),
         'duration': null,
-        'end': dateMethods.toDateString(new Date()),
-        'logTime': dateMethods.toDateString(new Date()),
-        'mac': '',
+        'end': row.end,
+        'logTime': row.logTime,
+        'mac': row.mac,
         'patternName': '',
         'patternStitch': 0,
         'reason': null,
         'runHeads': 0,
-        'shiftId': null,
-        'start': dateMethods.toDateString(new Date()),
+        'shiftId': row.shiftId,
+        'start': row.start,
         'type': 1,
-        'user': '',
-        'userId': null
-      })
+        'user': row.user,
+        'userId': row.userId
+      }, row)
     },
     createData(data) {
       const that = this
@@ -627,6 +645,24 @@ export default {
           duration: 2000
         })
       })
+    },
+    contextMenuClickEvent({ menu, row, column }) {
+      const xGrid = this.$refs.xGrid
+      switch (menu.code) {
+        case 'INSERT_AT_ROW_s':
+          this.handleCreate(row)
+          xGrid.clearTreeExpandLoaded(row)
+          break
+        case 'reloadNodes':
+          xGrid.reloadTreeChilds(row)
+          break
+        case 'expand':
+          xGrid.setTreeExpand(row, true)
+          break
+        case 'contract':
+          xGrid.setTreeExpand(row, false)
+          break
+      }
     },
     // 点击删除
     removeRowEvent(row) {

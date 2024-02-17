@@ -1,9 +1,7 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-select v-model="listQuery.orderID" :options="orders" clearable placeholder="订单选择" class="filter-item" @change="handleFilter">
-        <el-option v-for="item in orders" :key="item.value" :label="item.label" :value="item.value" />
-      </el-select>
+      <el-input v-model="listQuery.orderID" placeholder="订单ID" style="width: 180px;" class="filter-item" @keyup.enter.native="handleFilter" />
       <el-date-picker v-model="listQuery.date" class="filter-item" type="datetimerange" :picker-options="pickerOptions" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" align="right" @change="handleFilter" />
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-refresh" @click="handleFilter" />
       <el-button v-waves :loading="downloadLoading" class="filter-item" type="primary" icon="el-icon-download" @click="handleDownload">

@@ -30,6 +30,10 @@ export default {
     ochartData: {
       type: Object,
       required: true
+    },
+    chartLoad: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -42,6 +46,14 @@ export default {
       deep: true,
       handler(val) {
         this.setOption(val)
+      }
+    },
+    chartLoad: {
+      deep: true,
+      handler(val) {
+        if (val) {
+          this.showLoading()
+        }
       }
     }
   },
@@ -60,8 +72,13 @@ export default {
   methods: {
     initChart() {
       this.chart = echarts.init(this.$el, 'macarons')
+      this.showLoading()
+    },
+    showLoading() {
+      this.chart.showLoading()
     },
     setOption(data) {
+      this.chart.hideLoading()
       const start_ = data.start
       const end_ = data.end // 自定义时间
       const seriesData = []
@@ -69,12 +86,9 @@ export default {
 
       data.data.forEach((item, index) => {
         yAxisData_plant.push(item.plant)
-        // const bg = ['#2ec7c9', '#b6a2de', '#5ab1ef', '#ffb980', '#d87a80', '#8d98b3', '#e5cf0d', '#97b552', '#95706d', '#dc69aa', '#07a2a4', '#9a7fd1', '#588dd5', '#f5994e', '#c05050', '#59678c', '#c9ab00', '#7eb00a', '#6f5553', '#c14089']
         item.list.forEach((listItem, listIndex) => {
           const startTime = new Date(listItem.startTime).getTime()
           const endTime = new Date(listItem.endTime).getTime()
-          //   const sss = listItem.patternName.match(/([A-Z])[A-Z]*([A-Z])-([A-Z])[A-Z]*-[A-Z]*/i)
-          //   const color = '#' + sss[1].charCodeAt() + sss[2].charCodeAt() + sss[3].charCodeAt()
           seriesData.push({
             name: listItem.patternName,
             value: [

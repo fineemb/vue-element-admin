@@ -1,0 +1,12 @@
+diff --git a/node_modules/element-ui/packages/date-picker/src/basic/date-table.vue b/node_modules/element-ui/packages/date-picker/src/basic/date-table.vue
+index 03cfd86..1132601 100644
+--- a/node_modules/element-ui/packages/date-picker/src/basic/date-table.vue
++++ b/node_modules/element-ui/packages/date-picker/src/basic/date-table.vue
+@@ -36,6 +36,7 @@
+   import Locale from 'element-ui/src/mixins/locale';
+   import { arrayFindIndex, arrayFind, coerceTruthyValueToArray } from 'element-ui/src/utils/util';
+   import dateMethods from 'xe-utils/date'
++  import LunarCalendar from 'lunar-calendar'
+ 
+   const WEEKS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+   const getDateTimestamp = function(time) {

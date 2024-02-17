@@ -60,8 +60,13 @@ export default {
   methods: {
     initChart() {
       this.chart = echarts.init(this.$el, 'macarons')
+      this.showLoading()
+    },
+    showLoading() {
+      this.chart.showLoading()
     },
     setOption(data) {
+      this.chart.hideLoading()
       const start_ = data.start
       const end_ = data.end // 自定义时间
       const seriesData = []

@@ -30,10 +30,13 @@
           <el-dropdown-menu slot="dropdown">
             <el-dropdown-item command="settled">{{ listQuery.showSettled?'隐藏已结算':'显示已结算' }}</el-dropdown-item>
             <el-dropdown-item command="orderBy">{{ listQuery.orderBy==='desc'?'倒序显示':'顺序显示' }}</el-dropdown-item>
-            <el-dropdown-item command="orderBy">{{ listQuery.orderBy==='desc'?'仅显示基准':'全部显示' }}</el-dropdown-item>
+            <el-dropdown-item command="standard">{{ listQuery.standard===false?'仅显示基准':'全部显示' }}</el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
         <el-button v-waves class="filter-item" type="primary" icon="el-icon-full-screen" @click="zoom" />
+      </div>
+      <div class="filter-container">
+        <vxe-checkbox v-for="(column,index) in columns" :key="index" v-model="column.visible" @change="refreshColEvent">{{ column.title }}</vxe-checkbox>
       </div>
     </template>
     <vxe-grid
@@ -56,6 +59,7 @@
       :radio-config="{highlight: true}"
       :edit-config="{trigger: 'dblclick', mode: 'cell'}"
       :data="list"
+      :filter-method="filterMethod"
       @edit-closed="editClosedEvent"
       @page-change="handlePageChange"
     >
@@ -114,6 +118,7 @@ export default {
     return {
       list: [],
       loading: true,
+      columns: [],
       listQuery: {
         customerID: undefined,
         orderID: [],
@@ -122,7 +127,8 @@ export default {
         date: undefined,
         showSettled: false,
         orderBy: 'desc',
-        factory: undefined
+        factory: undefined,
+        standard: false
       },
       tablePage: {
         total: 1,
@@ -214,6 +220,12 @@ export default {
     this.getUser()
   },
   methods: {
+    refreshColEvent() {
+      const $table = this.$refs.xTable
+      if ($table) {
+        $table.refreshColumn()
+      }
+    },
     cellStyle({ row, rowIndex, column }) {
       if (row.isSettled) {
         return {
@@ -298,6 +310,7 @@ export default {
       this.loading = true
       var customerID = this.listQuery.customerID ? 'customerID: "' + this.listQuery.customerID + '",' : ''
       var showSettled = !this.listQuery.showSettled ? 'isSettled:_.exists(false).or(_.eq(false)),' : ''
+      var standard = this.listQuery.standard ? 'standard:_.exists(true).or(_.eq(true)),' : ''
       // var orderID = this.listQuery.orderID && this.listQuery.orderID.length > 0 ? 'orderID: "' + this.listQuery.orderID + '",' : ''
       var order = this.listQuery.orderID
       var orderID = []
@@ -319,7 +332,7 @@ export default {
         'collection': 'iolist',
         'offset': (this.tablePage.currentPage - 1) * this.tablePage.pageSize,
         'limit': this.tablePage.pageSize,
-        'where': customerID + showSettled + orderID + color + type + date + factory,
+        'where': customerID + showSettled + orderID + color + type + date + factory + standard,
         'orderBy': '"createTimes","' + this.listQuery.orderBy + '"' // desc,asc
       }
       getData(s).then(response => {
@@ -362,6 +375,7 @@ export default {
           }
         }
         this.list = newData
+        this.columns = this.$refs.xTable.getColumns()
         this.tablePage.total = response.pager.Total
         console.log(response)
         this.showEdit = []
@@ -517,6 +531,11 @@ export default {
       if (e === 'settled') {
         // 标记为已结算
         this.listQuery.showSettled = !this.listQuery.showSettled
+        this.getList()
+      }
+      if (e === 'standard') {
+        // 标记为已结算
+        this.listQuery.standard = !this.listQuery.standard
         this.getList()
       }
       if (e === 'orderBy') {

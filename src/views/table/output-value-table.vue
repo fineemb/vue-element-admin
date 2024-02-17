@@ -10,6 +10,8 @@
       resizable
       keep-source
       size="small"
+      :grid-options="gridOptions"
+      :context-menu="{body: {options: bodyMenus}}"
       :print-config="{isMerge:true}"
       :loading="loading"
       :export-config="{}"
@@ -140,17 +142,52 @@ export default {
           buttons: 'toolbar_buttons'
         }
       },
+      bodyMenus: [
+        // 自行自定义 code 的功能，自己实现更灵活
+        [
+          { code: 'myCode', name: '自定义的菜单' }
+        ],
+        // 引入 vxe-table-plugin-menus 之后可以直接使用以下内置 code，使用最简单
+        [
+          { code: 'CLEAR_CELL', name: '清除内容 (Del)' },
+          { code: 'COPY_CELL', name: '复制 (Ctrl+C)', prefixIcon: 'vxe-icon-copy' },
+          { code: 'CUT_CELL', name: '剪贴 (Ctrl+X)', prefixIcon: 'vxe-icon-cut' },
+          { code: 'PASTE_CELL', name: '粘贴 (Ctrl+V)', prefixIcon: 'vxe-icon-paste' }
+        ],
+        [
+          { code: 'INSERT_AT_ROW', name: '新增行' },
+          { code: 'DELETE_ROW', name: '删除行' },
+          { code: 'REVERT_CELL', name: '还原值', prefixIcon: 'vxe-icon-repeat' }
+        ],
+        [
+          { code: 'CLEAR_FILTER', name: '清除筛选' },
+          { code: 'CLEAR_ALL_FILTER', name: '清除所有筛选' },
+          {
+            name: '排序',
+            children: [
+              { code: 'CLEAR_SORT', name: '清除排序' },
+              { code: 'SORT_ASC', name: '升序', prefixIcon: 'vxe-icon-sort-alpha-asc' },
+              { code: 'SORT_DESC', name: '倒序', prefixIcon: 'vxe-icon-sort-alpha-desc' }
+            ]
+          }
+        ],
+        // 引入 vxe-table-plugin-menus 之后可以直接使用以下内置 code，使用最简单
+        [
+          { code: 'PRINT_ALL', name: '打印', prefixIcon: 'vxe-icon-print', params: { columns: ['name', 'role', 'sex', 'num', 'age'] }},
+          { code: 'EXPORT_ALL', name: '导出 CSV', prefixIcon: 'vxe-icon-download', params: { filename: '导出数据', type: 'csv' }}
+        ]
+      ],
       tableColumn: [
         { field: 'customerID', title: '客户', width: 80 },
         { field: '_id', title: '订单ID', width: 120 },
         { field: 'name', title: '订单名', width: 150 },
         { field: 'size', title: '尺码', width: 80 },
         { title: '数量', children: [
-          { field: 'WV', title: '入库', width: 80 },
-          { field: 'DV', title: '出库', width: 80 },
-          { field: 'diff', title: '差值', width: 80, sortable: true }
+          { field: 'WV', title: '入库', width: 80, editRender: { name: 'input' }},
+          { field: 'DV', title: '出库', width: 80, editRender: { name: 'input' }},
+          { field: 'diff', title: '差值', width: 80, sortable: true, editRender: { name: 'input' }}
         ] },
-        { field: 'price', title: '单价', width: 80 },
+        { field: 'price', title: '单价', width: 80, editRender: { name: 'input' }},
         { field: 'remark', title: '备注', editRender: { name: 'input' }}
       ],
       rules: {

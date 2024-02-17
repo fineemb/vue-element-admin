@@ -403,6 +403,8 @@ export default {
           this.$message.error('删除花样超时')
         } else if (response.data === 2) {
           this.$message.error('花样正在使用，不能删除')
+          this.checkedDesigns = []
+          this.openDesigns(response.deviceId)
         }
       }).catch(err => {
         console.log(err)
