@@ -5,8 +5,9 @@
       <div v-for="item in machines" :key="item.mac" class="updateBox">
         <el-progress class="progress" :percentage="item.percentage" :show-text="false" :stroke-width="5" :color="item.reason" />
         <el-alert v-if="item.status===404" class="patternAlert" :title="item.status===404?'文件'+item.filename+'未找到不能预览':''" type="error" />
-        <el-button class="cctv" type="primary" icon="el-icon-video-camera" circle @click="hk_login(item.cctv)" />
+        <el-button class="cctv" type="primary" icon="el-icon-video-camera" circle @click="hk_login(item.cctv, item.port, item.username, item.password)" />
         <el-button class="info" type="primary" icon="el-icon-s-data" circle />
+        <el-button class="msg" type="primary" icon="el-icon-s-comment" circle @click="send_msg(item.id)" />
         <div @click="openDesigns(item.id)">
           <el-tooltip placement="top-start">
             <div slot="content">{{ item.userName }}<br>点击管理花样</div>
@@ -57,8 +58,8 @@
 
 <script>
 // import axios from 'axios'
-import eventBus from '../../utils/eventBus'
-import { getUserInfo, getDstFile, getDesigns, delDesigns } from '@/api/user'
+// import eventBus from '../../utils/eventBus'
+import { getUserInfo, getDstFile, getDesigns, delDesigns, getrMachines, refreshState, sendMsg } from '@/api/user'
 import waves from '@/directive/waves' // waves directive
 import { Loading } from 'element-ui'
 // arr to obj, such as { CN : "China", US : "USA" }
@@ -79,6 +80,7 @@ export default {
   data() {
     return {
       // loadingInstance: null,
+      timer: null,
       checkedDesigns: [],
       uploadName: null,
       drawer: false,
@@ -96,128 +98,7 @@ export default {
       orders: [],
       users: [],
       states: {},
-      reasons: [{
-        'value': 1,
-        'label': '完成刺绣'
-      }, {
-        'value': 2,
-        'label': '用户登出'
-      }, {
-        'value': 3,
-        'label': '解除刺绣'
-      }, {
-        'value': 4,
-        'label': '返回原点'
-      }, {
-        'value': 5,
-        'label': '清空累计'
-      }, {
-        'value': 8,
-        'label': '交班打卡'
-      }],
-      machines: [{
-        value: '1281909412AA',
-        label: '01号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.205'
-      }, {
-        value: '1282404669AA',
-        label: '02号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.205'
-      }, {
-        value: '1282404744AA',
-        label: '03号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.210'
-      }, {
-        value: '1281909392AA',
-        label: '04号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.210'
-      }, {
-        value: '1282404761AA',
-        label: '05号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.204'
-      }, {
-        value: '1281909414AA',
-        label: '06号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.204'
-      }, {
-        value: '1281909398AA',
-        label: '07号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.203'
-      }, {
-        value: '1282404640AA',
-        label: '08号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.203'
-      }, {
-        value: '1282404672AA',
-        label: '09号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.209'
-      }, {
-        value: '1281909385AA',
-        label: '10号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.209'
-      }, {
-        value: '1281905521AA',
-        label: '11号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.202'
-      }, {
-        value: '1281905538AA',
-        label: '12号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.202'
-      }, {
-        value: '1281905287AA',
-        label: '13号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.208'
-      }, {
-        value: '1281909382AA',
-        label: '14号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.208'
-      }, {
-        value: '1281909405AA',
-        label: '15号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.207'
-      }, {
-        value: '1282404633AA',
-        label: '16号',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.207'
-      }, {
-        value: '1282001535AA',
-        label: '样机',
-        curStitch: 0,
-        patternStitch: 0,
-        cctv: '192.168.1.206'
-      }],
+      machines: [],
       downloadLoading: false
     }
   },
@@ -241,15 +122,19 @@ export default {
     }
   },
   mounted() {
-    eventBus.$on('message', this.message)
+    // eventBus.$on('message', this.message)
     this.$nextTick(() => {
       setTimeout(() => {
         this.hk_Init()
       }, 1000)
+      this.timer = setInterval(() => {
+        this.refreshState()
+      }, 17000)
     })
   },
   beforeDestroy() {
-    eventBus.$off('message', this.message)
+    // eventBus.$off('message', this.message)
+    clearInterval(this.timer)
     const stopAll = () => {
       return new Promise(resolve => {
         // eslint-disable-next-line no-undef
@@ -273,6 +158,7 @@ export default {
   },
   created() {
     this.getUser()
+    this.getrMachines()
   },
   methods: {
     hk_Init() {
@@ -315,15 +201,15 @@ export default {
         }
       })
     },
-    hk_login(ip) {
+    hk_login(ip, port, username, password) {
       const _this = this
       // eslint-disable-next-line no-undef
       WebVideoCtrl.I_Login(
         ip,
         '1',
-        '80',
-        'admin',
-        'laitouFYmima8',
+        port,
+        username,
+        password,
         {
           timeout: 3000,
           async: false,
@@ -464,6 +350,12 @@ export default {
         this.users = response.data
       })
     },
+    getrMachines() {
+      getrMachines().then(response => {
+        this.machines = response.data
+        this.refreshState()
+      })
+    },
     handleSuccess(response, file, fileList) {
       this.$alert('请确认是否需要重新设置短针过滤', '过滤开关提示', {
         confirmButtonText: '确定'
@@ -475,62 +367,82 @@ export default {
         this.$message.success('版带上传成功')
       }
     },
-    message(res) {
-      // console.log(res)
-      if (res.type === 'userInfo') {
-        const icon = this.users.find(e => e.userId === res.data.user.userId).avatarUrl
-        const machineIndex = this.machines.findIndex(e => e.value === res.data.mac)
-        const md = this.machines[machineIndex]
-        md['userIcon'] = icon
-        this.machines.splice(machineIndex, 1, md)
-      }
-      if (res.type === 'state') {
-        const data = res.data
-        const icon = this.users.find(e => e.name === data.user.userId)?.avatarUrl || ''
-        const userName = this.users.find(e => e.name === res.data.user.userId)?.name || ''
-        const curStitch = res.data.pattern.curStitch
-        const reason = res.data.machineState.reason
-        const patternStitch = res.data.pattern.patternStitch
-        const filename = res.data.pattern.patternName
-        const machineIndex = this.machines.findIndex(e => e.value === data.mac)
-        const md = this.machines[machineIndex]
-        // console.log(machineIndex)
-        md['id'] = res.data.machineState.id
-        md['userIcon'] = icon
-        md['userName'] = userName
-        md['ss'] = res.data.machineState.state + ' (' + res.data.machineState.reason + ')'
-        // let color =
-        md['reason'] = (reason === '花样完成') ? '#5cb87a' : ((reason === '断线') ? '#aa3535' : ((reason === '手动') ? '#fff21a' : '#409eff'))
-        if (this.machines[machineIndex].filename && this.machines[machineIndex].curStitch !== curStitch) {
-          // 刷新版带
-          this.dstCanvas(this.machines[machineIndex].file, this.machines[machineIndex].value, 290, 180)
+    refreshState() {
+      refreshState({}).then(response => {
+        console.log('macstate', response)
+        const machines = response.items
+        for (var i = 0; i < machines.length; i++) {
+          const machine = machines[i]
+          const mac = machine.authCode
+          const filename = machine.designName
+          const patternStitch = machine.patternStitch
+          const curStitch = machine.curStitch
+          const reason = machine.reason
+          const state = machine.state
+          const userName = machine.userName
+          const icon = this.users.find(e => e.name === userName)?.avatarUrl || ''
+          const machineIndex = this.machines.findIndex(e => e.value === mac)
+          const md = this.machines[machineIndex]
+          md['id'] = machine.id
           md['curStitch'] = curStitch
           md['patternStitch'] = patternStitch
           md['percentage'] = Math.floor(curStitch ? curStitch / patternStitch * 100 : 0)
-        }
-        this.machines.splice(machineIndex, 1, md)
-        if (filename && this.machines[machineIndex].filename !== filename) {
-          // 刷新版带
-          getDstFile({ file: filename, mac: res.data.mac }).then(response => {
-            if (response.message === 200) {
-              md['filename'] = response.filename
-              md['file'] = response.data.data
+          md['userIcon'] = icon
+          md['userName'] = userName
+          md['states'] = state
+          md['ss'] = state + ' (' + reason + ')'
+          md['reason'] = (reason === '花样完成') ? '#5cb87a' : ((reason === '断线') ? '#aa3535' : ((reason === '手动') ? '#fff21a' : '#409eff'))
+          this.machines.splice(machineIndex, 1, md)
+          if (this.machines[machineIndex].filename && this.machines[machineIndex].curStitch !== curStitch) {
+            // 刷新画面
+            this.dstCanvas(this.machines[machineIndex].file, this.machines[machineIndex].value, 290, 180)
+          }
+          if (filename && this.machines[machineIndex].filename !== filename) {
+            // 更换版带
+            getDstFile({ file: filename, mac: mac }).then(response => {
+              if (response.message === 200) {
+                md['filename'] = response.filename
+                md['file'] = response.data.data
+                this.machines.splice(machineIndex, 1, md)
+                this.dstCanvas(response.data.data, response.mac, 290, 180)
+              }
+            }, error => {
+              console.log(error)
+              md['filename'] = decodeURI(error.response?.data.filename)
+              md['status'] = error.response?.data.message
               this.machines.splice(machineIndex, 1, md)
-              this.dstCanvas(response.data.data, response.mac, 290, 180)
-            }
-          }, error => {
-            console.log(error)
-            md['filename'] = decodeURI(error.response?.data.filename)
-            md['status'] = error.response?.data.message
-            this.machines.splice(machineIndex, 1, md)
-          }).catch(err => {
-            console.log(err)
-            this.$message.error('服务器未找到这个文件' + decodeURI(filename))
-          })
+            }).catch(err => {
+              console.log(err)
+              this.$message.error('服务器未找到这个文件' + decodeURI(filename))
+            })
+          }
         }
-      }
+      })
+    },
+    send_msg(e) {
+      console.log(e)
+      this.$prompt('请输入消息的内容', '发送消息到机器', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      }).then(({ value }) => {
+        this.$message({
+          type: 'success',
+          message: '消息的内容是: ' + value + e
+        })
+        sendMsg({
+          id: e,
+          msg: value
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '取消发送'
+        })
+      })
     },
     dstCanvas: function(data, mac, w, h) {
+      // var scale = window.devicePixelRatio
+      // const dpr = window.devicePixelRatio
       const curStitch = this.machines.find(e => e.value === mac)?.curStitch
       const uint8 = new Uint8Array(data)
       const head = String.fromCharCode.apply(null, uint8.slice(0, 512))
@@ -592,12 +504,11 @@ export default {
       const offsety = designInfo.height * r < h ? (h - designInfo.height * r) / 2 : 0
       let x = designInfo.start.x * r + offsetx
       let y = designInfo.start.y * r + offsety
-      const dpr = window.devicePixelRatio
       let nowcolor = -1
       let step = -1
       canvas.width = w
       canvas.height = h
-      context.scale(dpr, dpr)
+      context.scale(1, 1)
       context.translate(0.5, 0.5)
       context.lineWidth = r * 3
       context.strokeStyle = colors[((nowcolor + 1 > 9) ? 0 : nowcolor + 1)]
@@ -698,7 +609,7 @@ export default {
   .filter-container > * {
     margin: 8px;
   }
-  .cctv,.info{
+  .cctv,.info,.msg{
     display: block;
     position: absolute;
     top: -5px;
@@ -729,6 +640,19 @@ export default {
   }
   100% {
     transform: translate3d(0, 90px, 0);
+  }
+}
+  .updateBox:hover .msg{
+    /* animation-duration: 3s; */
+    /* animation-name: shake; */
+    animation: msgshake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+  @keyframes msgshake {
+    0%{
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 130px, 0);
   }
 }
   .dstView {

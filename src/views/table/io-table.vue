@@ -3,11 +3,14 @@
     <template>
       <div class="filter-container">
         <el-cascader v-model="listQuery.orderID" class="filter-item" placeholder="订单选择" :options="orders" :props="{ multiple: true, checkStrictly: true }" filterable allow-create default-first-option clearable @change="handleFilter" />
-        <el-select v-model="listQuery.type" clearable placeholder="出入库" class="filter-item" @change="handleFilter">
+        <el-select v-model="listQuery.type" clearable placeholder="出入库" style="width: 110px;" class="filter-item" @change="handleFilter">
           <el-option v-for="item in [{label:'出货',value:'DV'},{label:'入库',value:'WV'}]" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
-        <el-input v-model="listQuery.customerID" placeholder="客户ID" style="width: 110px;" class="filter-item" clearable @keyup.enter.native="handleFilter" />
-        <el-input v-model="listQuery.factory" placeholder="加工场" style="width: 110px;" class="filter-item" clearable @keyup.enter.native="handleFilter" />
+        <el-select v-model="listQuery.size" clearable placeholder="尺码" style="width: 110px;" class="filter-item" @change="handleFilter">
+          <el-option v-for="item in [{label:'加大',value:'加大'},{label:'标准',value:'标准'},{label:'小码',value:'小码'}]" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+        <el-input v-model="listQuery.customerID" placeholder="客户ID" style="width: 90px;" class="filter-item" clearable @keyup.enter.native="handleFilter" />
+        <el-input v-model="listQuery.factory" placeholder="加工场" style="width: 100px;" class="filter-item" clearable @keyup.enter.native="handleFilter" />
         <el-date-picker v-model="listQuery.date" class="filter-item" type="datetimerange" :picker-options="pickerOptions" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" align="right" @change="handleFilter" />
         <el-button v-waves class="filter-item" type="primary" icon="el-icon-refresh" @click="handleFilter">刷新</el-button>
         <el-dropdown class="filter-item" split-button type="primary" @command="handleBatch">
@@ -128,7 +131,8 @@ export default {
         showSettled: false,
         orderBy: 'desc',
         factory: undefined,
-        standard: false
+        standard: false,
+        size: undefined
       },
       tablePage: {
         total: 1,
@@ -327,12 +331,13 @@ export default {
       if (orderID.length > 0) orderID = 'orderID:_.or(["' + orderID.join('","') + '"]),'
       var factory = this.listQuery.factory ? 'factory: "' + this.listQuery.factory + '",' : ''
       var type = this.listQuery.type ? 'type: "' + this.listQuery.type + '",' : ''
+      var size = this.listQuery.size ? 'size: "' + this.listQuery.size + '",' : ''
       var date = this.listQuery.date ? 'createTimes:(_.and(_.gte(' + Math.round(Date.parse(this.listQuery.date[0]) / 1000) + '), _.lte(' + Math.round(Date.parse(this.listQuery.date[1]) / 1000) + '))),' : ''
       const s = {
         'collection': 'iolist',
         'offset': (this.tablePage.currentPage - 1) * this.tablePage.pageSize,
         'limit': this.tablePage.pageSize,
-        'where': customerID + showSettled + orderID + color + type + date + factory + standard,
+        'where': customerID + size + showSettled + orderID + color + type + date + factory + standard,
         'orderBy': '"createTimes","' + this.listQuery.orderBy + '"' // desc,asc
       }
       getData(s).then(response => {
@@ -515,7 +520,7 @@ export default {
       if (checkboxRecords && checkboxRecords.length > 0 && e === 'isSettled') {
         console.log(checkboxRecords)
         // 标记为已结算
-        updateIsSettled(checkboxRecords).then(response => {
+        updateIsSettled({ item: checkboxRecords }).then(response => {
           console.log(response)
           this.getList()
           this.$message({

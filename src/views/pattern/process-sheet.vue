@@ -85,8 +85,8 @@
             id="canvas"
             ref="canvas"
             class="dstViewa"
-            width="794"
-            height="1123"
+            width="1111"
+            height="1572"
             :style="{'zoom':canvasZoom/100}"
             @dragenter="handleDragEnter"
             @dragover="handleDragOver"
@@ -128,10 +128,10 @@ export default {
     return {
       canvas: null,
       context: null,
-      canvasHeight: 1123, // 画布宽度
-      canvasWidth: 794, // 画布高度
+      canvasHeight: 1123 * 1.4, // 画布宽度
+      canvasWidth: 794 * 1.4, // 画布高度
       controlPanelTop: 0,
-      canvasZoom: 85, // 画面显示缩放比例
+      canvasZoom: 65, // 画面显示缩放比例
       frame: null,
       margin: 100, // 标注文本和线之间的距离
       b2zMargin: 100 * 2.5, // 枕套和被面之间的间隔
@@ -139,7 +139,7 @@ export default {
       part: 'bm',
       activeNames: '',
       dragOffset: { x: 0, y: 0 },
-      scale: 1,
+      scale: 100,
       machine: '',
       mac: '',
       filename: '',

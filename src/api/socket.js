@@ -120,6 +120,8 @@ const client = {
   toSocket(value) {
     let data = value
     if (typeof value === 'object') {
+      // console.log('socket:', store.state.user.env)
+      value.env = store.state.user.env
       data = JSON.stringify(value)
     }
     this.wss.send(data)

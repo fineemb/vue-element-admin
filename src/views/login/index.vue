@@ -1,72 +1,84 @@
 <template>
-
   <div class="login-container">
-    <div class="title-container">
-      <h3 class="title">纺艺刺绣后台管理系统</h3>
-      <div class="login_header">
-        <a :class="{active:cur==false + ' al'}" @click="cur=false">微信登录</a>
-        <a :class="{active:cur==true + ' al'}" @click="cur=true">密码登录</a>
-      </div>
+    <div class="video-box">
+      <video class="video-background" preload="auto" loop playsinline autoplay src="/video/1031.mp4" tabindex="-1" muted="muted" />
     </div>
-    <div v-show="cur==true" class="Cbody_item">
-      <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" autocomplete="on" label-position="left">
-        <el-form-item prop="username">
-          <span class="svg-container">
-            <svg-icon icon-class="user" />
-          </span>
-          <el-input
-            ref="username"
-            v-model="loginForm.username"
-            placeholder="用户名"
-            name="username"
-            type="text"
-            tabindex="1"
-            autocomplete="on"
-          />
-        </el-form-item>
-        <el-tooltip v-model="capsTooltip" content="Caps lock is On" placement="right" manual>
-          <el-form-item prop="password">
+    <div class="form">
+      <div class="title-container">
+        <h3 class="title">纺艺刺绣后台管理系统</h3>
+        <div class="login_header">
+          <a :class="{active:cur==false + ' al'}" @click="cur=false">微信登录</a>
+          <a :class="{active:cur==true + ' al'}" @click="cur=true">密码登录</a>
+        </div>
+      </div>
+      <div v-show="cur==true" class="Cbody_item">
+        <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" autocomplete="on" label-position="left">
+          <el-form-item prop="username">
             <span class="svg-container">
-              <svg-icon icon-class="password" />
+              <svg-icon icon-class="user" />
             </span>
             <el-input
-              :key="passwordType"
-              ref="password"
-              v-model="loginForm.password"
-              :type="passwordType"
-              placeholder="密码"
-              name="password"
-              tabindex="2"
+              ref="username"
+              v-model="loginForm.username"
+              placeholder="用户名"
+              name="username"
+              type="text"
+              tabindex="1"
               autocomplete="on"
-              @keyup.native="checkCapslock"
-              @blur="capsTooltip = false"
-              @keyup.enter.native="handleLogin"
             />
-            <span class="show-pwd" @click="showPwd">
-              <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
-            </span>
           </el-form-item>
-        </el-tooltip>
-        <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">登录</el-button>
-      </el-form>
+          <el-tooltip v-model="capsTooltip" content="Caps lock is On" placement="right" manual>
+            <el-form-item prop="password">
+              <span class="svg-container">
+                <svg-icon icon-class="password" />
+              </span>
+              <el-input
+                :key="passwordType"
+                ref="password"
+                v-model="loginForm.password"
+                :type="passwordType"
+                placeholder="密码"
+                name="password"
+                tabindex="2"
+                autocomplete="on"
+                @keyup.native="checkCapslock"
+                @blur="capsTooltip = false"
+                @keyup.enter.native="handleLogin"
+              />
+              <span class="show-pwd" @click="showPwd">
+                <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
+              </span>
+            </el-form-item>
+          </el-tooltip>
+          <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">登录</el-button>
+        </el-form>
+      </div>
+      <div v-show="cur==false" class="Cbody_item">
+        <wxlogin
+          id="wxcode"
+          style="text-align: center;height: 280px;"
+          theme="white"
+          appid="wx7d03fb839eb55f81"
+          href="data:text/css;base64,QGNoYXJzZXQgInV0Zi04IjsuaW1wb3dlckJveCAucXJjb2Rle3dpZHRoOjE4MHB4O2JvcmRlcjowO21hcmdpbi10b3A6MTNweH0uaW1wb3dlckJveCAudGl0bGV7ZGlzcGxheTpub25lfS5pbXBvd2VyQm94IC5pbmZve3dpZHRoOjE2MHB4fS5zdGF0dXNfaWNvbntkaXNwbGF5Om5vbmV9LmltcG93ZXJCb3ggLnN0YXR1c3t0ZXh0LWFsaWduOmNlbnRlcn0ud3JwX2NvZGV7d2lkdGg6MjA2cHg7YmFja2dyb3VuZC1jb2xvcjojZmZmO2JvcmRlcjoxcHggc29saWQgI2U1ZTVlNTtoZWlnaHQ6MjA2cHg7bWFyZ2luOjAgYXV0bztib3JkZXItcmFkaXVzOjRweH0="
+          scope="snsapi_login"
+          :redirect_uri="redirect_uri"
+        />
+      </div>
     </div>
-    <div v-show="cur==false" class="Cbody_item">
-      <wxlogin
-        id="wxcode"
-        style="text-align: center"
-        theme="white"
-        appid="wx7d03fb839eb55f81"
-        href="data:text/css;base64,QGNoYXJzZXQgInV0Zi04IjsuaW1wb3dlckJveCAucXJjb2Rle3dpZHRoOjE4MHB4O2JvcmRlcjowO21hcmdpbi10b3A6MTNweH0uaW1wb3dlckJveCAudGl0bGV7ZGlzcGxheTpub25lfS5pbXBvd2VyQm94IC5pbmZve3dpZHRoOjE2MHB4fS5zdGF0dXNfaWNvbntkaXNwbGF5Om5vbmV9LmltcG93ZXJCb3ggLnN0YXR1c3t0ZXh0LWFsaWduOmNlbnRlcn0ud3JwX2NvZGV7d2lkdGg6MjA2cHg7YmFja2dyb3VuZC1jb2xvcjojZmZmO2JvcmRlcjoxcHggc29saWQgI2U1ZTVlNTtoZWlnaHQ6MjA2cHg7bWFyZ2luOjAgYXV0bztib3JkZXItcmFkaXVzOjRweH0="
-        scope="snsapi_login"
-        :redirect_uri="redirect_uri"
-      />
-    </div>
-  </div></template>
-
+  </div>
+</template>
 <script>
+// import Particles from '@tsparticles/vue2'
+// import { loadFull } from 'tsparticles'
 import { validUsername } from '@/utils/validate'
 import wxlogin from 'vue-wxlogin'
 
+// Vue.use(Particles, {
+//   init: async engine => {
+//     // await loadFull(engine);
+//     // await loadSlim(engine);
+//   }
+// })
 export default {
   name: 'Login',
   components: { wxlogin },
@@ -120,7 +132,7 @@ export default {
     const { query } = this.$route
     const { code } = query
     if (code) {
-      console.log(code)
+      console.log('login_created:', code)
       this.afterQRScan(code)
     }
     // this.redirect_uri = encodeURIComponent('https://factory.dnxh.cn:886/#/authredirect?redirect=' + window.location.origin)
@@ -179,7 +191,7 @@ export default {
     afterQRScan(code) {
       if (code) {
         this.$store.dispatch('user/LoginByThirdparty', code).then((e) => {
-          console.log(e)
+          console.log('afterQRScan:', e)
           this.$router.push({ path: this.redirect || '/' })
         })
       } else {
@@ -249,6 +261,8 @@ $cursor: #fff;
       &:-webkit-autofill {
         box-shadow: 0 0 0px 1000px $bg inset !important;
         -webkit-text-fill-color: $cursor !important;
+        margin: 0 10px;
+        border-radius: 0 3px 3px 0;
       }
     }
   }
@@ -268,10 +282,49 @@ $dark_gray:#889aa4;
 $light_gray:#eee;
 
 .login-container {
-  min-height: 100%;
-  width: 100%;
-  background-color: $bg;
-  overflow: hidden;
+  position: relative;
+    overflow: hidden;
+    height: 100%;
+    display: -ms-flexbox;
+    display: -webkit-box;
+    display: flex;
+    -ms-flex-pack: center;
+    -webkit-box-pack: center;
+    justify-content: center;
+    -ms-flex-align: center;
+    -webkit-box-align: center;
+    align-items: center;
+    background-position: -20% 10%;
+    background-size: contain;
+    background-color: #283443ab;
+  .form {
+    width: 400px;
+    background-color: #283443ab;
+    overflow: hidden;
+    padding:35px;
+    margin-right: -40%;
+    z-index: 1000;
+  }
+  .video-box {
+    position: absolute;
+    height: 100vh;
+    width: 100%;
+    background-color: #C1CFF7;
+    /*进行视频裁剪*/
+    overflow: hidden;
+    .video-background {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      /*保证视频内容始终居中*/
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      /*保证视频充满屏幕*/
+      object-fit: cover;
+      min-height: 800px;
+    }
+  }
 
   .login-form {
     position: relative;
@@ -304,7 +357,7 @@ $light_gray:#eee;
 
   .title-container {
     position: relative;
-    padding: 160px 35px 0;
+    // padding: 35px 35px 0;
 
     .title {
       font-size: 26px;

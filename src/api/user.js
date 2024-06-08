@@ -20,10 +20,11 @@ export function logout() {
     method: 'post'
   })
 }
-export function getUserInfo() {
+export function getUserInfo(data) {
   return request({
     url: '/userinfo',
-    method: 'get'
+    method: 'post',
+    data
   })
 }
 export function getTask() {
@@ -60,6 +61,13 @@ export function delData(data) {
     data
   })
 }
+export function addData(data) {
+  return request({
+    url: '/addData',
+    method: 'post',
+    data
+  })
+}
 export function addYield(data) {
   return request({
     url: '/addYield',
@@ -79,6 +87,21 @@ export function getrOrders(data) {
   return request({
     url: '/getrorders',
     method: 'post',
+    data
+  })
+}
+export function getrMachines(data) {
+  return request({
+    url: '/getmachines',
+    method: 'post',
+    data
+  })
+}
+export function refreshState(data) {
+  return request({
+    url: '/refreshstate',
+    method: 'post',
+    timeout: 10000,
     data
   })
 }
@@ -134,6 +157,13 @@ export function outputValue(data) {
 export function reDHData(data) {
   return request({
     url: '/redhdata',
+    method: 'post',
+    data
+  })
+}
+export function sendMsg(data) {
+  return request({
+    url: '/sendmsg',
     method: 'post',
     data
   })

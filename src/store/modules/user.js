@@ -8,6 +8,7 @@ const state = {
   name: '',
   avatar: '',
   introduction: '',
+  env: '',
   roles: []
 }
 
@@ -29,6 +30,9 @@ const mutations = {
   },
   SET_ROLES: (state, roles) => {
     state.roles = roles
+  },
+  SET_ENV: (state, env) => {
+    state.env = env
   }
 }
 
@@ -74,7 +78,7 @@ const actions = {
           reject('Verification failed, please Login again.')
         }
 
-        const { roles, name, avatar, introduction } = data
+        const { roles, name, avatar, introduction, env } = data
 
         // roles must be a non-empty array
         if (!roles || roles.length <= 0) {
@@ -85,6 +89,7 @@ const actions = {
         commit('SET_NAME', name)
         commit('SET_AVATAR', avatar)
         commit('SET_INTRODUCTION', introduction)
+        commit('SET_ENV', env)
         resolve(data)
       }).catch(error => {
         reject(error)
@@ -102,7 +107,7 @@ const actions = {
           reject('Verification failed, please Login again.')
         }
 
-        const { roles, name, avatar, introduction } = data
+        const { roles, name, avatar, introduction, env } = data
 
         // roles must be a non-empty array
         if (!roles || roles.length <= 0) {
@@ -113,6 +118,7 @@ const actions = {
         commit('SET_NAME', name)
         commit('SET_AVATAR', avatar)
         commit('SET_INTRODUCTION', introduction)
+        commit('SET_ENV', env)
         resolve(data)
       }).catch(error => {
         reject(error)
@@ -127,6 +133,7 @@ const actions = {
         commit('SET_TOKEN', '')
         commit('SET_OPENID', '')
         commit('SET_ROLES', [])
+        commit('SET_ENV', '')
         removeToken()
         removeOpenID()
         resetRouter()
@@ -147,6 +154,7 @@ const actions = {
     return new Promise(resolve => {
       commit('SET_TOKEN', '')
       commit('SET_OPENID', '')
+      commit('SET_ENV', '')
       commit('SET_ROLES', [])
       removeToken()
       removeOpenID()

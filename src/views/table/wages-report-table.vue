@@ -32,7 +32,7 @@
         </div>
       </template>
       <template #operate="{ row }">
-        <el-popconfirm title="这条数据确定要删除吗？" @onConfirm="removeRowEvent(row)">
+        <el-popconfirm title="这条数据确定要删除吗？" @confirm="removeRowEvent(row)">
           <vxe-button slot="reference" icon="el-icon-delete" title="删除" circle />
         </el-popconfirm>
       </template>

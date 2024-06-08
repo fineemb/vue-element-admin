@@ -7,10 +7,10 @@ Vue.use(Router)
 import Layout from '@/layout'
 
 /* Router Modules */
-import componentsRouter from './modules/components'
-import chartsRouter from './modules/charts'
-import tableRouter from './modules/table'
-import nestedRouter from './modules/nested'
+// import componentsRouter from './modules/components'
+// import chartsRouter from './modules/charts'
+// import tableRouter from './modules/table'
+// import nestedRouter from './modules/nested'
 
 /**
  * Note: sub-menu only appear when route children.length >= 1
@@ -144,7 +144,7 @@ export const constantRoutes = [
         path: 'index',
         component: () => import('@/views/table/io-table'),
         name: 'IOTable',
-        meta: { title: '出入库流水', icon: 'io', affix: false, noCache: false }
+        meta: { title: '进出流水', icon: 'io', affix: false, noCache: false }
       }
     ]
   },
@@ -157,6 +157,18 @@ export const constantRoutes = [
         component: () => import('@/views/table/wages-report-table'),
         name: 'wagesReportTable',
         meta: { title: '工价规则', icon: 'wages-report', affix: false, noCache: false }
+      }
+    ]
+  },
+  {
+    path: '/price-table',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/table/price-table'),
+        name: 'wagesReportTable',
+        meta: { title: '工价表', icon: 'price', affix: false, noCache: false }
       }
     ]
   },
@@ -185,6 +197,18 @@ export const constantRoutes = [
     ]
   },
   {
+    path: '/notice-table',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/table/notice-table'),
+        name: 'notice-table',
+        meta: { title: '通知管理', icon: 'el-icon-message-solid', affix: false, noCache: false }
+      }
+    ]
+  },
+  {
     path: '/process-sheet',
     component: Layout,
     children: [
@@ -208,19 +232,19 @@ export const constantRoutes = [
       }
     ]
   },
-  {
-    path: '/guide',
-    component: Layout,
-    redirect: '/guide/index',
-    children: [
-      {
-        path: 'index',
-        component: () => import('@/views/guide/index'),
-        name: 'Guide',
-        meta: { title: 'Guide', icon: 'guide', noCache: true }
-      }
-    ]
-  },
+  // {
+  //   path: '/guide',
+  //   component: Layout,
+  //   redirect: '/guide/index',
+  //   children: [
+  //     {
+  //       path: 'index',
+  //       component: () => import('@/views/guide/index'),
+  //       name: 'Guide',
+  //       meta: { title: 'Guide', icon: 'guide', noCache: true }
+  //     }
+  //   ]
+  // },
   {
     path: '/profile',
     component: Layout,
@@ -308,10 +332,10 @@ export const asyncRoutes = [
       },
 
       /** when your routing map is too long, you can split it into small modules **/
-      componentsRouter,
-      chartsRouter,
-      nestedRouter,
-      tableRouter,
+      // componentsRouter,
+      // chartsRouter,
+      // nestedRouter,
+      // tableRouter,
 
       {
         path: '/example',

@@ -409,8 +409,8 @@ export default {
         this.getList()
       }
 
-      this.ColEvent[e] ? this.hideColEvent(e) : this.showColEvent(e)
-      this.ColEvent[e] = !this.ColEvent[e]
+      // this.ColEvent[e] ? this.hideColEvent(e) : this.showColEvent(e)
+      // this.ColEvent[e] = !this.ColEvent[e]
     },
     handleFilter() {
       this.listQuery.page = 1

@@ -55,7 +55,7 @@
         </div>
       </template>
       <template #operate="{ row }">
-        <el-popconfirm title="这条数据确定要删除吗？" @onConfirm="removeRowEvent(row)">
+        <el-popconfirm title="这条数据确定要删除吗？" @confirm="removeRowEvent(row)">
           <vxe-button slot="reference" icon="el-icon-delete" title="删除" circle />
         </el-popconfirm>
       </template>
@@ -233,8 +233,8 @@ export default {
         { field: 'start', title: '开始时间', width: 170, editRender: { name: '$input', props: { type: 'datetime' }}},
         { field: 'end', title: '完成时间', width: 170, editRender: { name: '$input', props: { type: 'datetime' }}},
         { field: 'duration', title: '完成耗时', width: 110, slots: { default: 'duration_default' }},
-        { field: 'duration', title: '运作时间', width: 110, slots: { default: 'exact_duration_default' }},
-        { field: 'duration', title: '总耗时', width: 110, slots: { default: 'whole_duration_default' }},
+        { field: 'exact_duration', title: '运作时间', width: 110, slots: { default: 'exact_duration_default' }},
+        { field: 'whole_duration', title: '总耗时', width: 110, slots: { default: 'whole_duration_default' }},
         { field: 'createTime', title: '记录时间', width: 170, editRender: { name: '$input', props: { type: 'datetime' }}},
         { title: '操作', slots: { default: 'operate' }}
       ],
@@ -666,6 +666,7 @@ export default {
     },
     // 点击删除
     removeRowEvent(row) {
+      console.log(row)
       delData({ 'collection': 'dahaoyield', 'id': row._id }).then(response => {
         console.log(response)
         this.getList()

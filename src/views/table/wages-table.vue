@@ -612,7 +612,7 @@ export default {
       if (checkboxRecords && checkboxRecords.length > 0 && e === 'isSettled') {
         console.log(checkboxRecords)
         // 标记为已结算
-        updateIsSettled(checkboxRecords).then(response => {
+        updateIsSettled({ item: checkboxRecords }).then(response => {
           console.log(response)
           this.getList()
           this.$message({
